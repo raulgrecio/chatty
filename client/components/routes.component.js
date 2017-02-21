@@ -3,12 +3,17 @@ import { Router, Scene, Actions } from 'react-native-router-flux';
 import { Text, View, StyleSheet } from 'react-native';
 import { connect } from 'react-redux';
 
+import { Groups } from './groups.component';
+import { Messages } from './messages.component';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
+  },
+  tabBarStyle: {
+    backgroundColor: '#dbdbdb',
   },
   tabText: {
     color: '#777',
@@ -47,14 +52,26 @@ TabIcon.propTypes = {
 // create scenes via Actions.create() or it will be re-created every time Router renders
 export const Scenes = Actions.create(
   <Scene key="root">
-    <Scene key="tabs" tabs >
+    <Scene key="tabs" tabBarStyle={styles.tabBarStyle} tabs>
       <Scene key="chatsTab" title="Chats" icon={TabIcon}>
-        <Scene key="groups" component={TestScene} title="Chats" />
+        <Scene
+          key="groups"
+          component={Groups}
+          title="Chats"
+        />
       </Scene>
       <Scene key="settingsTab" title="Settings" icon={TabIcon}>
-        <Scene key="settings" component={TestScene} title="Settings" />
+        <Scene
+          key="settings"
+          component={TestScene}
+          title="Settings"
+        />
       </Scene>
     </Scene>
+    <Scene
+      key="messages"
+      component={Messages}
+    />
   </Scene>,
 );
 
