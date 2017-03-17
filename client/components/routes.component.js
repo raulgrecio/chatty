@@ -3,8 +3,8 @@ import { Router, Scene, Actions } from 'react-native-router-flux';
 import { Text, View, StyleSheet } from 'react-native';
 import { connect } from 'react-redux';
 
-import { Groups } from './groups.component';
-import { Messages } from './messages.component';
+import Groups from './groups.component';
+import Messages from './messages.component';
 
 const styles = StyleSheet.create({
   container: {
