@@ -1,6 +1,8 @@
 # chatty
 
-A WhatsApp clone with React Native, Express, and Apollo
+A WhatsApp clone with React Native, Express, and Apollo.
+
+This code is for Part 2 in a multipart blog series building Chatty. You can view the blog post [here](https://medium.com/@simontucker/building-chatty-part-2-graphql-queries-with-express-6dce83b39479).
 
 ## Installing
 ```
