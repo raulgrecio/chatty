@@ -2,7 +2,7 @@
 
 A WhatsApp clone with React Native, Express, and Apollo
 
-## Installingasfa
+## Installing
 ```
 yarn                               # install server dependencies
 cd client && yarn                  # install client dependencies

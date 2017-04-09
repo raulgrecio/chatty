@@ -1,5 +1,6 @@
 import { Actions } from 'react-native-router-flux';
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import {
   ActivityIndicator,
   ListView,

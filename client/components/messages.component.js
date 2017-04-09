@@ -1,13 +1,17 @@
-import { _ } from 'lodash';
 import {
+  ActivityIndicator,
   ListView,
   Platform,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
-import React, { Component, PropTypes } from 'react';
-import moment from 'moment';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import randomColor from 'randomcolor';
+import { graphql, compose } from 'react-apollo';
+
+import Message from './message.component';
+import GROUP_QUERY from '../graphql/group.query';
 
 const styles = StyleSheet.create({
   container: {
@@ -15,7 +19,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5ddd5',
     flex: 1,
     flexDirection: 'column',
-    paddingTop: 32,
+    paddingTop: 64,
   },
   loading: {
     justifyContent: 'center',
@@ -47,44 +51,55 @@ const styles = StyleSheet.create({
   },
 });
 
-const fakeData = () => _.times(100, i => ({
-  id: i,
-  createdAt: new Date().toISOString(),
-  from: {
-    username: 'Username',
-  },
-  text: `Message ${i}`,
-}));
-
-const Message = ({ message }) => (
-  <View key={message.id} style={{ paddingVertical: 10 }}>
-    <View>
-      <Text>{message.from.username}</Text>
-      <Text>{message.text}</Text>
-      <Text style={styles.messageTime}>{moment(message.createdAt).format('h:mm A')}</Text>
-    </View>
-  </View>
-);
-Message.propTypes = {
-  message: PropTypes.shape({
-    createdAt: PropTypes.string.isRequired,
-    from: PropTypes.shape({
-      username: PropTypes.string.isRequired,
-    }),
-    text: PropTypes.string.isRequired,
-  }).isRequired,
-};
-
-export class Messages extends Component {
+class Messages extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
-        .cloneWithRows(fakeData()),
+      ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 }),
+      usernameColors: {},
     };
   }
 
+  componentWillReceiveProps(nextProps) {
+    const oldData = this.props;
+    const newData = nextProps;
+
+    const usernameColors = {};
+
+    // check for new messages
+    if (newData.group) {
+      if (newData.group.users) {
+        // apply a color to each user
+        newData.group.users.map((user) => {
+          usernameColors[user.username] = this.state.usernameColors[user.username] || randomColor();
+        });
+      }
+
+      if (!!newData.group.messages &&
+        (!oldData.group || newData.group.messages !== oldData.group.messages)) {
+        // convert messages Array to ListView.DataSource
+        // we will use this.state.ds to populate our ListView
+        this.setState({
+          // cloneWithRows computes a diff and decides whether to rerender
+          ds: this.state.ds.cloneWithRows(newData.group.messages.slice().reverse()),
+          usernameColors,
+        });
+      }
+    }
+  }
+
   render() {
+    const { loading, group } = this.props;
+
+    // render loading placeholder while we fetch messages
+    if (loading && !group) {
+      return (
+        <View style={[styles.loading, styles.container]}>
+          <ActivityIndicator />
+        </View>
+      );
+    }
+
     // render list of messages for group
     return (
       <View style={styles.container}>
@@ -93,7 +108,11 @@ export class Messages extends Component {
           enableEmptySections
           dataSource={this.state.ds}
           renderRow={message => (
-            <Message message={message} />
+            <Message
+              color={this.state.usernameColors[message.from.username]}
+              message={message}
+              isCurrentUser={message.from.id === 1}
+            />
           )}
         />
       </View>
@@ -102,8 +121,22 @@ export class Messages extends Component {
 }
 
 Messages.propTypes = {
+  group: PropTypes.shape({
+    messages: PropTypes.array,
+    users: PropTypes.array,
+  }),
+  loading: PropTypes.bool,
   groupId: PropTypes.number.isRequired,
   title: PropTypes.string.isRequired,
 };
 
-export default Messages;
+const groupQuery = graphql(GROUP_QUERY, {
+  options: ({ groupId }) => ({ variables: { groupId } }),
+  props: ({ data: { loading, group } }) => ({
+    loading, group,
+  }),
+});
+
+export default compose(
+  groupQuery,
+)(Messages);
