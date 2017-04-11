@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
   ActivityIndicator,
+  Button,
   ListView,
   Platform,
   StyleSheet,
@@ -12,7 +13,7 @@ import {
 } from 'react-native';
 import { graphql, compose } from 'react-apollo';
 
-import { USER_QUERY } from '../graphql/user.query';
+import USER_QUERY from '../graphql/user.query';
 
 const styles = StyleSheet.create({
   container: {
@@ -38,7 +39,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 0.7,
   },
+  header: {
+    alignItems: 'flex-end',
+    padding: 6,
+    borderColor: '#eee',
+    borderBottomWidth: 1,
+  },
+  warning: {
+    textAlign: 'center',
+    padding: 12,
+  },
 });
+
+const Header = () => (
+  <View style={styles.header}>
+    <Button title={'New Group'} onPress={Actions.newGroup} />
+  </View>
+);
 
 class Group extends Component {
   constructor(props) {
@@ -95,7 +112,7 @@ class Groups extends Component {
   }
 
   render() {
-    const { loading } = this.props;
+    const { loading, user } = this.props;
 
     // render loading placeholder while we fetch messages
     if (loading) {
@@ -106,12 +123,22 @@ class Groups extends Component {
       );
     }
 
+    if (user && !user.groups.length) {
+      return (
+        <View style={styles.container}>
+          <Header />
+          <Text style={styles.warning}>{'You do not have any groups.'}</Text>
+        </View>
+      );
+    }
+
     // render list of groups for user
     return (
       <View style={styles.container}>
         <ListView
           enableEmptySections
           dataSource={this.state.ds}
+          renderHeader={() => <Header />}
           renderRow={(group => (
             <Group group={group} goToMessages={this.goToMessages} />
           ))}

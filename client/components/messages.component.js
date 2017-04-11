@@ -1,11 +1,15 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Image,
   ListView,
   Platform,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import { Actions } from 'react-native-router-flux';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import randomColor from 'randomcolor';
@@ -64,6 +68,12 @@ class Messages extends Component {
     };
 
     this.send = this.send.bind(this);
+    this.groupDetails = this.groupDetails.bind(this);
+    this.renderTitle = this.renderTitle.bind(this);
+  }
+
+  componentDidMount() {
+    this.renderTitle();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -94,6 +104,10 @@ class Messages extends Component {
     }
   }
 
+  groupDetails() {
+    Actions.groupDetails({ id: this.props.groupId });
+  }
+
   send(text) {
     this.props.createMessage({
       groupId: this.props.groupId,
@@ -103,6 +117,25 @@ class Messages extends Component {
 
     this.setState({
       shouldScrollToBottom: true,
+    });
+  }
+
+  renderTitle() {
+    Actions.refresh({
+      renderTitle: () => (
+        <TouchableOpacity
+          style={styles.titleWrapper}
+          onPress={this.groupDetails}
+        >
+          <View style={styles.title}>
+            <Image
+              style={styles.titleImage}
+              source={{ uri: 'https://facebook.github.io/react/img/logo_og.png' }}
+            />
+            <Text>{this.props.title}</Text>
+          </View>
+        </TouchableOpacity>
+      ),
     });
   }
 

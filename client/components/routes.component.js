@@ -7,6 +7,10 @@ import { connect } from 'react-redux';
 import Groups from './groups.component';
 import Messages from './messages.component';
 
+import FinalizeGroup from './finalize-group.component';
+import GroupDetails from './group-details.component';
+import NewGroup from './new-group.component';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -69,10 +73,25 @@ export const Scenes = Actions.create(
         />
       </Scene>
     </Scene>
+    <Scene key="newGroup" direction="vertical">
+      <Scene
+        key="newGroupModal"
+        component={NewGroup}
+        title="New Group"
+        schema="modal"
+        panHandlers={null}
+      />
+      <Scene
+        key="finalizeGroup"
+        component={FinalizeGroup}
+        title="New Group"
+      />
+    </Scene>
     <Scene
       key="messages"
       component={Messages}
     />
+    <Scene key="groupDetails" component={GroupDetails} title="Group Info" />
   </Scene>,
 );
 

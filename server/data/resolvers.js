@@ -26,6 +26,45 @@ export const Resolvers = {
         groupId,
       });
     },
+
+    createGroup(_, { name, userIds, userId }) {
+      return User.findOne({ where: { id: userId } })
+        .then((user) => {
+          return user.getFriends({ where: { id: { $in: userIds } } })
+            .then((friends) => {
+              return Group.create({
+                name,
+                users: [user, ...friends],
+              }).then((group) => {
+                return group.addUsers([user, ...friends]).then(() => {
+                  return group;
+                });
+              });
+            });
+        });
+    },
+
+    deleteGroup(_, { id }) {
+      return Group.find({ where: id })
+        .then(group => group.getUsers()
+          .then(users => group.removeUsers(users))
+          .then(() => Message.destroy({ where: { groupId: group.id } }))
+          .then(() => group.destroy()),
+        );
+    },
+
+    leaveGroup(_, { id, userId }) {
+      return Group.findOne({ where: { id } })
+        .then((group) => {
+          group.removeUser(userId);
+          return { id };
+        });
+    },
+
+    updateGroup(_, { id, name }) {
+      return Group.findOne({ where: { id } })
+        .then(group => group.update({ name }));
+    },
   },
 
   Group: {
