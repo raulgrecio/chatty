@@ -18,6 +18,16 @@ export const Resolvers = {
     },
   },
 
+  Mutation: {
+    createMessage(_, { text, userId, groupId }) {
+      return Message.create({
+        userId,
+        text,
+        groupId,
+      });
+    },
+  },
+
   Group: {
     users(group) {
       return group.getUsers();

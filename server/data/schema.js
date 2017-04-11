@@ -1,6 +1,7 @@
 export const Schema = [`
   # declare custom scalars
   scalar Date
+
   # a group chat entity
   type Group {
     id: Int! # unique id for the group
@@ -8,6 +9,7 @@ export const Schema = [`
     users: [User]! # users in the group
     messages: [Message] # messages sent to the group
   }
+
   # a user -- keep model really simple for now
   type User {
     id: Int! # unique id for the user
@@ -17,6 +19,7 @@ export const Schema = [`
     groups: [Group] # groups the user belongs to
     friends: [User] # user's contacts
   }
+
   # a message sent from a user to a group
   type Message {
     id: Int! # unique id for message
@@ -25,6 +28,7 @@ export const Schema = [`
     text: String! # message text
     createdAt: Date! # when message was created
   }
+
   # query for types
   type Query {
     # Return a user by their email or id
@@ -35,8 +39,17 @@ export const Schema = [`
     # Return a group by its id
     group(id: Int!): Group
   }
+
+  type Mutation {
+    # send a message to a group
+    createMessage(
+      text: String!, userId: Int!, groupId: Int!
+    ): Message
+  }
+
   schema {
     query: Query
+    mutation: Mutation
   }
 `];
 
