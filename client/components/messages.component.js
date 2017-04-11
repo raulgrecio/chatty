@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   ListView,
   Platform,
   StyleSheet,
@@ -9,9 +10,12 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import randomColor from 'randomcolor';
 import { graphql, compose } from 'react-apollo';
+import update from 'immutability-helper';
 
 import Message from './message.component';
+import MessageInput from './message-input.component';
 import GROUP_QUERY from '../graphql/group.query';
+import CREATE_MESSAGE_MUTATION from '../graphql/createMessage.mutation';
 
 const styles = StyleSheet.create({
   container: {
@@ -19,7 +23,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5ddd5',
     flex: 1,
     flexDirection: 'column',
-    paddingTop: 64,
+    paddingTop: 32,
   },
   loading: {
     justifyContent: 'center',
@@ -58,6 +62,8 @@ class Messages extends Component {
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 }),
       usernameColors: {},
     };
+
+    this.send = this.send.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -88,6 +94,18 @@ class Messages extends Component {
     }
   }
 
+  send(text) {
+    this.props.createMessage({
+      groupId: this.props.groupId,
+      userId: 1, // faking the user for now
+      text,
+    });
+
+    this.setState({
+      shouldScrollToBottom: true,
+    });
+  }
+
   render() {
     const { loading, group } = this.props;
 
@@ -102,11 +120,24 @@ class Messages extends Component {
 
     // render list of messages for group
     return (
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={'position'}
+        contentContainerStyle={styles.container}
+        style={styles.container}
+      >
         <ListView
+          ref={(ref) => { this.listView = ref; }}
           style={styles.listView}
           enableEmptySections
           dataSource={this.state.ds}
+          onContentSizeChange={() => {
+            if (this.state.shouldScrollToBottom) {
+              this.listView.scrollToEnd({ animated: true });
+              this.setState({
+                shouldScrollToBottom: false,
+              });
+            }
+          }}
           renderRow={message => (
             <Message
               color={this.state.usernameColors[message.from.username]}
@@ -115,12 +146,14 @@ class Messages extends Component {
             />
           )}
         />
-      </View>
+        <MessageInput send={this.send} />
+      </KeyboardAvoidingView>
     );
   }
 }
 
 Messages.propTypes = {
+  createMessage: PropTypes.func,
   group: PropTypes.shape({
     messages: PropTypes.array,
     users: PropTypes.array,
@@ -137,6 +170,54 @@ const groupQuery = graphql(GROUP_QUERY, {
   }),
 });
 
+// helper function checks for duplicate comments
+// TODO it's pretty inefficient to scan all the comments every time.
+// maybe only scan the first 10, or up to a certain timestamp
+function isDuplicateMessage(newMessage, existingMessages) {
+  return newMessage.id !== null && existingMessages.some(message => newMessage.id === message.id);
+}
+
+const createMessage = graphql(CREATE_MESSAGE_MUTATION, {
+  props: ({ ownProps, mutate }) => ({
+    createMessage: ({ text, userId, groupId }) =>
+      mutate({
+        variables: { text, userId, groupId },
+        optimisticResponse: {
+          __typename: 'Mutation',
+          createMessage: {
+            __typename: 'Message',
+            id: null,
+            text,
+            createdAt: new Date().toISOString(),
+            from: {
+              __typename: 'User',
+              id: 1,
+              username: 'Justyn.Kautzer',
+            },
+          },
+        },
+        updateQueries: {
+          group: (previousResult, { mutationResult }) => {
+            const newMessage = mutationResult.data.createMessage;
+
+            if (isDuplicateMessage(newMessage, previousResult.group.messages)) {
+              return previousResult;
+            }
+
+            return update(previousResult, {
+              group: {
+                messages: {
+                  $unshift: [newMessage],
+                },
+              },
+            });
+          },
+        },
+      }),
+  }),
+});
+
 export default compose(
   groupQuery,
+  createMessage,
 )(Messages);
