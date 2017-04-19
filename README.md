@@ -2,7 +2,7 @@
 
 A WhatsApp clone with React Native, Express, and Apollo.
 
-This code is for Part 4 in a multipart blog series building Chatty. This code includes the challenge section following the main post. You can view the blog post [here](https://medium.com/p/8dee7778a170).
+This code is for Part 5 in a multipart blog series building Chatty. You can view the blog post [here](https://medium.com/p/23a25fc9f0bf).
 
 ## Installing
 ```
