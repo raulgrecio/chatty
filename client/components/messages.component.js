@@ -4,6 +4,7 @@ import {
   Image,
   ListView,
   Platform,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -65,10 +66,12 @@ class Messages extends Component {
     this.state = {
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 }),
       usernameColors: {},
+      refreshing: false,
     };
 
     this.send = this.send.bind(this);
     this.groupDetails = this.groupDetails.bind(this);
+    this.onRefresh = this.onRefresh.bind(this);
     this.renderTitle = this.renderTitle.bind(this);
   }
 
@@ -102,6 +105,15 @@ class Messages extends Component {
         });
       }
     }
+  }
+
+  onRefresh() {
+    this.setState({ refreshing: true });
+    this.props.loadMoreEntries().then(() => {
+      this.setState({
+        refreshing: false,
+      });
+    });
   }
 
   groupDetails() {
@@ -163,6 +175,12 @@ class Messages extends Component {
           style={styles.listView}
           enableEmptySections
           dataSource={this.state.ds}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshing}
+              onRefresh={this.onRefresh}
+            />
+          }
           onContentSizeChange={() => {
             if (this.state.shouldScrollToBottom) {
               this.listView.scrollToEnd({ animated: true });
@@ -192,14 +210,42 @@ Messages.propTypes = {
     users: PropTypes.array,
   }),
   loading: PropTypes.bool,
+  loadMoreEntries: PropTypes.func,
   groupId: PropTypes.number.isRequired,
   title: PropTypes.string.isRequired,
 };
 
+const ITEMS_PER_PAGE = 10;
 const groupQuery = graphql(GROUP_QUERY, {
-  options: ({ groupId }) => ({ variables: { groupId } }),
-  props: ({ data: { loading, group } }) => ({
-    loading, group,
+  options: ({ groupId }) => ({
+    variables: {
+      groupId,
+      offset: 0,
+      limit: ITEMS_PER_PAGE,
+    },
+  }),
+  props: ({ data: { fetchMore, loading, group } }) => ({
+    loading,
+    group,
+    loadMoreEntries() {
+      return fetchMore({
+        // query: ... (you can specify a different query. GROUP_QUERY is used by default)
+        variables: {
+          // We are able to figure out which offset to use because it matches
+          // the current messages length
+          offset: group.messages.length,
+        },
+        updateQuery: (previousResult, { fetchMoreResult }) => {
+          if (!fetchMoreResult) { return previousResult; }
+
+          return update(previousResult, {
+            group: {
+              messages: { $push: fetchMoreResult.group.messages },
+            },
+          });
+        },
+      });
+    },
   }),
 });
 

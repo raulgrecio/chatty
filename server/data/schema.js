@@ -7,7 +7,7 @@ export const Schema = [`
     id: Int! # unique id for the group
     name: String # name of the group
     users: [User]! # users in the group
-    messages: [Message] # messages sent to the group
+    messages(limit: Int, offset: Int): [Message] # messages sent to the group
   }
 
   # a user -- keep model really simple for now
@@ -33,9 +33,6 @@ export const Schema = [`
   type Query {
     # Return a user by their email or id
     user(email: String, id: Int): User
-    # Return messages sent by a user via userId
-    # Return messages sent to a group via groupId
-    messages(groupId: Int, userId: Int): [Message]
     # Return a group by its id
     group(id: Int!): Group
   }

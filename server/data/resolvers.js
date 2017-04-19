@@ -9,10 +9,6 @@ export const Resolvers = {
       return Group.find({ where: args });
     },
 
-    messages(_, args) {
-      return Message.findAll({ where: args, order: [['createdAt', 'DESC']] });
-    },
-
     user(_, args) {
       return User.findOne({ where: args });
     },
@@ -71,10 +67,12 @@ export const Resolvers = {
     users(group) {
       return group.getUsers();
     },
-    messages(group) {
+    messages(group, args) {
       return Message.findAll({
         where: { groupId: group.id },
         order: [['createdAt', 'DESC']],
+        limit: args.limit,
+        offset: args.offset,
       });
     },
   },

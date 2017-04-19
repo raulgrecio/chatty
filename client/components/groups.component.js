@@ -4,14 +4,18 @@ import PropTypes from 'prop-types';
 import {
   ActivityIndicator,
   Button,
+  Image,
   ListView,
   Platform,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableHighlight,
   View,
 } from 'react-native';
 import { graphql, compose } from 'react-apollo';
+import moment from 'moment';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import USER_QUERY from '../graphql/user.query';
 
@@ -35,9 +39,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  groupTextContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    paddingLeft: 6,
+  },
+  groupText: {
+    color: '#8c8c8c',
+  },
+  groupImage: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+  },
+  groupTitleContainer: {
+    flexDirection: 'row',
+  },
   groupName: {
     fontWeight: 'bold',
     flex: 0.7,
+  },
+  groupLastUpdated: {
+    flex: 0.3,
+    color: '#8c8c8c',
+    fontSize: 11,
+    textAlign: 'right',
+  },
+  groupUsername: {
+    paddingVertical: 4,
   },
   header: {
     alignItems: 'flex-end',
@@ -57,14 +86,25 @@ const Header = () => (
   </View>
 );
 
+// format createdAt with moment
+const formatCreatedAt = createdAt => moment(createdAt).calendar(null, {
+  sameDay: '[Today]',
+  nextDay: '[Tomorrow]',
+  nextWeek: 'dddd',
+  lastDay: '[Yesterday]',
+  lastWeek: 'dddd',
+  sameElse: 'DD/MM/YYYY',
+});
+
 class Group extends Component {
   constructor(props) {
     super(props);
 
     this.goToMessages = this.props.goToMessages.bind(this, this.props.group);
   }
+
   render() {
-    const { id, name } = this.props.group;
+    const { id, name, messages } = this.props.group;
 
     return (
       <TouchableHighlight
@@ -72,7 +112,29 @@ class Group extends Component {
         onPress={this.goToMessages}
       >
         <View style={styles.groupContainer}>
-          <Text style={styles.groupName}>{`${name}`}</Text>
+          <Image
+            style={styles.groupImage}
+            source={{ uri: 'https://facebook.github.io/react/img/logo_og.png' }}
+          />
+          <View style={styles.groupTextContainer}>
+            <View style={styles.groupTitleContainer}>
+              <Text style={styles.groupName}>{`${name}`}</Text>
+              <Text style={styles.groupLastUpdated}>
+                {messages.length ? formatCreatedAt(messages[0].createdAt) : ''}
+              </Text>
+            </View>
+            <Text style={styles.groupUsername}>
+              {messages.length ? `${messages[0].from.username}:` : ''}
+            </Text>
+            <Text style={styles.groupText} numberOfLines={1}>
+              {messages.length ? messages[0].text : ''}
+            </Text>
+          </View>
+          <Icon
+            name="angle-right"
+            size={24}
+            color={'#8c8c8c'}
+          />
         </View>
       </TouchableHighlight>
     );
@@ -84,6 +146,7 @@ Group.propTypes = {
   group: PropTypes.shape({
     id: PropTypes.number,
     name: PropTypes.string,
+    messages: PropTypes.array,
   }),
 };
 
@@ -92,12 +155,11 @@ class Groups extends Component {
     super(props);
     this.state = {
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 }),
+      refreshing: false,
     };
-    this.goToMessages = this.goToMessages.bind(this);
-  }
 
-  goToMessages(group) {
-    Actions.messages({ groupId: group.id, title: group.name });
+    this.goToMessages = this.goToMessages.bind(this);
+    this.onRefresh = this.onRefresh.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -109,6 +171,17 @@ class Groups extends Component {
         ds: this.state.ds.cloneWithRows(nextProps.user.groups),
       });
     }
+  }
+
+  goToMessages(group) {
+    Actions.messages({ groupId: group.id, title: group.name });
+  }
+
+  onRefresh() {
+    this.setState({ refreshing: true });
+    this.props.refetch().then(() => {
+      this.setState({ refreshing: false });
+    });
   }
 
   render() {
@@ -138,6 +211,12 @@ class Groups extends Component {
         <ListView
           enableEmptySections
           dataSource={this.state.ds}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshing}
+              onRefresh={this.onRefresh}
+            />
+          }
           renderHeader={() => <Header />}
           renderRow={(group => (
             <Group group={group} goToMessages={this.goToMessages} />
@@ -149,6 +228,7 @@ class Groups extends Component {
 }
 Groups.propTypes = {
   loading: PropTypes.bool,
+  refetch: PropTypes.func,
   user: PropTypes.shape({
     id: PropTypes.number.isRequired,
     email: PropTypes.string.isRequired,
@@ -163,8 +243,8 @@ Groups.propTypes = {
 
 const userQuery = graphql(USER_QUERY, {
   options: () => ({ variables: { id: 1 } }),
-  props: ({ data: { loading, user } }) => ({
-    loading, user,
+  props: ({ data: { loading, refetch, user } }) => ({
+    loading, refetch, user,
   }),
 });
 
