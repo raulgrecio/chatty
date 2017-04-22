@@ -1,5 +1,6 @@
 import GraphQLDate from 'graphql-date';
 import { Group, Message, User } from './connectors';
+import { pubsub } from '../subscriptions';
 
 export const Resolvers = {
   Date: GraphQLDate,
@@ -20,6 +21,10 @@ export const Resolvers = {
         userId,
         text,
         groupId,
+      }).then((message) => {
+        // Publish subscription notification with the whole message
+        pubsub.publish('messageAdded', message);
+        return message;
       });
     },
 
@@ -30,9 +35,10 @@ export const Resolvers = {
             .then((friends) => {
               return Group.create({
                 name,
-                users: [user, ...friends],
               }).then((group) => {
-                return group.addUsers([user, ...friends]).then(() => {
+                return group.addUsers([user, ...friends]).then((res) => {
+                  group.users = [user, ...friends];
+                  pubsub.publish('groupAdded', group);
                   return group;
                 });
               });
@@ -60,6 +66,17 @@ export const Resolvers = {
     updateGroup(_, { id, name }) {
       return Group.findOne({ where: { id } })
         .then(group => group.update({ name }));
+    },
+  },
+
+  Subscription: {
+    messageAdded(message) {
+      // the subscription payload is the message.
+      return message;
+    },
+    groupAdded(group) {
+      console.log('group', group);
+      return group;
     },
   },
 

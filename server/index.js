@@ -1,37 +1,43 @@
 import express from 'express';
 import { graphqlExpress, graphiqlExpress } from 'graphql-server-express';
-import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
 import bodyParser from 'body-parser';
-
-import { Resolvers } from './data/resolvers';
-import { Schema } from './data/schema';
-import { Mocks } from './data/mocks';
+import { createServer } from 'http';
+import { SubscriptionServer } from 'subscriptions-transport-ws';
+import subscriptionManager from './subscriptions';
+import executableSchema from './data/schema';
 
 const GRAPHQL_PORT = 8080;
+const GRAPHQL_PATH = '/graphql';
+const SUBSCRIPTIONS_PATH = '/subscriptions';
 
-const graphQLServer = express();
-
-const executableSchema = makeExecutableSchema({
-  typeDefs: Schema,
-  resolvers: Resolvers,
-});
-
-// addMockFunctionsToSchema({
-//   schema: executableSchema,
-//   mocks: Mocks,
-//   preserveResolvers: true,
-// });
+const app = express();
 
 // `context` must be an object and can't be undefined when using connectors
-graphQLServer.use('/graphql', bodyParser.json(), graphqlExpress({
+app.use('/graphql', bodyParser.json(), graphqlExpress({
   schema: executableSchema,
   context: {}, //at least(!) an empty object
 }));
 
-graphQLServer.use('/graphiql', graphiqlExpress({
+app.use('/graphiql', graphiqlExpress({
   endpointURL: '/graphql',
+  subscriptionsEndpoint: `ws://localhost:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`,
 }));
 
-graphQLServer.listen(GRAPHQL_PORT, () => console.log(
-  `GraphQL Server is now running on http://localhost:${GRAPHQL_PORT}/graphql`
-));
+const graphQLServer = createServer(app);
+
+graphQLServer.listen(GRAPHQL_PORT, () => {
+  console.log(`GraphQL Server is now running on http://localhost:${GRAPHQL_PORT}${GRAPHQL_PATH}`);
+  console.log(`GraphQL Subscriptions are now running on ws://localhost:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`);
+});
+
+// eslint-disable-next-line no-new
+new SubscriptionServer({
+  subscriptionManager,
+  // onSubscribe(parsedMessage, baseParams, connection) {
+  //   console.log('baseParams', baseParams.context);
+  //   return Promise.resolve(baseParams);
+  // },
+}, {
+  server: graphQLServer,
+  path: SUBSCRIPTIONS_PATH,
+});

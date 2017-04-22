@@ -24,9 +24,11 @@
     "graphql": "^0.9.1",
     "graphql-date": "^1.0.3",
     "graphql-server-express": "^0.7.1",
+    "graphql-subscriptions": "^0.3.1",
     "graphql-tools": "^0.11.0",
     "lodash": "^4.17.4",
     "sequelize": "^3.30.2",
-    "sqlite3": "^3.1.8"
+    "sqlite3": "^3.1.8",
+    "subscriptions-transport-ws": "^0.5.5"
   }
 }
