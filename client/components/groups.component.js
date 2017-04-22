@@ -16,8 +16,19 @@ import {
 import { graphql, compose } from 'react-apollo';
 import moment from 'moment';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import update from 'immutability-helper';
+import { map } from 'lodash';
 
 import USER_QUERY from '../graphql/user.query';
+import MESSAGE_ADDED_SUBSCRIPTION from '../graphql/messageAdded.subscription';
+import GROUP_ADDED_SUBSCRIPTION from '../graphql/groupAdded.subscription';
+
+// helper function checks for duplicate documents
+// TODO it's pretty inefficient to scan all the documents every time.
+// maybe only scan the first 10, or up to a certain timestamp
+function isDuplicateDocument(newDocument, existingDocuments) {
+  return newDocument.id !== null && existingDocuments.some(doc => newDocument.id === doc.id);
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -171,6 +182,59 @@ class Groups extends Component {
         ds: this.state.ds.cloneWithRows(nextProps.user.groups),
       });
     }
+
+    // we don't resubscribe on changed props, because it never happens in our app
+    if (!this.messagesSubscription && !nextProps.loading) {
+      this.messagesSubscription = nextProps.subscribeToMore({
+        document: MESSAGE_ADDED_SUBSCRIPTION,
+        variables: { groupIds: map(nextProps.user.groups, 'id') },
+        updateQuery: (previousResult, { subscriptionData }) => {
+          const previousGroups = previousResult.user.groups;
+          const newMessage = subscriptionData.data.messageAdded;
+
+          const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
+
+          // if it's our own mutation, we might get the subscription result
+          // after the mutation result.
+          if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
+            return previousResult;
+          }
+
+          return update(previousResult, {
+            user: {
+              groups: {
+                [groupIndex]: {
+                  messages: { $set: [newMessage] },
+                },
+              },
+            },
+          });
+        },
+      });
+    }
+
+    if (!this.groupSubscription && !nextProps.loading) {
+      this.groupSubscription = nextProps.subscribeToMore({
+        document: GROUP_ADDED_SUBSCRIPTION,
+        variables: { userId: 1 }, // last time we'll fake the user!
+        updateQuery: (previousResult, { subscriptionData }) => {
+          const previousGroups = previousResult.user.groups;
+          const newGroup = subscriptionData.data.groupAdded;
+
+          // if it's our own mutation, we might get the subscription result
+          // after the mutation result.
+          if (isDuplicateDocument(newGroup, previousGroups)) {
+            return previousResult;
+          }
+
+          return update(previousResult, {
+            user: {
+              groups: { $push: [newGroup] },
+            },
+          });
+        },
+      });
+    }
   }
 
   goToMessages(group) {
@@ -229,6 +293,7 @@ class Groups extends Component {
 Groups.propTypes = {
   loading: PropTypes.bool,
   refetch: PropTypes.func,
+  subscribeToMore: PropTypes.func,
   user: PropTypes.shape({
     id: PropTypes.number.isRequired,
     email: PropTypes.string.isRequired,
@@ -243,8 +308,8 @@ Groups.propTypes = {
 
 const userQuery = graphql(USER_QUERY, {
   options: () => ({ variables: { id: 1 } }),
-  props: ({ data: { loading, refetch, user } }) => ({
-    loading, refetch, user,
+  props: ({ data: { loading, refetch, user, subscribeToMore } }) => ({
+    loading, refetch, user, subscribeToMore,
   }),
 });
 

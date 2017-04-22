@@ -21,6 +21,14 @@ import Message from './message.component';
 import MessageInput from './message-input.component';
 import GROUP_QUERY from '../graphql/group.query';
 import CREATE_MESSAGE_MUTATION from '../graphql/createMessage.mutation';
+import MESSAGE_ADDED_SUBSCRIPTION from '../graphql/messageAdded.subscription';
+
+// helper function checks for duplicate comments
+// TODO it's pretty inefficient to scan all the comments every time.
+// maybe only scan the first 10, or up to a certain timestamp
+function isDuplicateMessage(newMessage, existingMessages) {
+  return newMessage.id !== null && existingMessages.some(message => newMessage.id === message.id);
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -104,6 +112,31 @@ class Messages extends Component {
           usernameColors,
         });
       }
+    }
+
+    // we don't resubscribe on changed props, because it never happens in our app
+    if (!this.subscription && !newData.loading) {
+      this.subscription = newData.subscribeToMore({
+        document: MESSAGE_ADDED_SUBSCRIPTION,
+        variables: { groupIds: [newData.groupId] },
+        updateQuery: (previousResult, { subscriptionData }) => {
+          const newMessage = subscriptionData.data.messageAdded;
+
+          // if it's our own mutation, we might get the subscription result
+          // after the mutation result.
+          if (isDuplicateMessage(newMessage, previousResult.group.messages)) {
+            return previousResult;
+          }
+
+          return update(previousResult, {
+            group: {
+              messages: {
+                $unshift: [newMessage],
+              },
+            },
+          });
+        },
+      });
     }
   }
 
@@ -224,9 +257,10 @@ const groupQuery = graphql(GROUP_QUERY, {
       limit: ITEMS_PER_PAGE,
     },
   }),
-  props: ({ data: { fetchMore, loading, group } }) => ({
+  props: ({ data: { fetchMore, loading, group, subscribeToMore } }) => ({
     loading,
     group,
+    subscribeToMore,
     loadMoreEntries() {
       return fetchMore({
         // query: ... (you can specify a different query. GROUP_QUERY is used by default)
@@ -248,13 +282,6 @@ const groupQuery = graphql(GROUP_QUERY, {
     },
   }),
 });
-
-// helper function checks for duplicate comments
-// TODO it's pretty inefficient to scan all the comments every time.
-// maybe only scan the first 10, or up to a certain timestamp
-function isDuplicateMessage(newMessage, existingMessages) {
-  return newMessage.id !== null && existingMessages.some(message => newMessage.id === message.id);
-}
 
 const createMessage = graphql(CREATE_MESSAGE_MUTATION, {
   props: ({ ownProps, mutate }) => ({

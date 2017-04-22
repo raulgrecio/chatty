@@ -75,7 +75,6 @@ export const Resolvers = {
       return message;
     },
     groupAdded(group) {
-      console.log('group', group);
       return group;
     },
   },

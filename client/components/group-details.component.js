@@ -228,7 +228,6 @@ const leaveGroup = graphql(LEAVE_GROUP_MUTATION, {
         variables: { id: ownProps.id, userId: 1 }, // fake user for now
         updateQueries: {
           user: (previousResult, { mutationResult }) => {
-            console.log(previousResult);
             const removedGroup = mutationResult.data.leaveGroup;
 
             return update(previousResult, {

@@ -250,8 +250,6 @@ class NewGroup extends Component {
   render() {
     const { data } = this.props;
 
-    console.log(data);
-
     // render loading placeholder while we fetch messages
     if (!data || data.loading) {
       return (
