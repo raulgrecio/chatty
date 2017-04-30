@@ -33,10 +33,24 @@ networkInterface.use([{
 // middleware for responses
 networkInterface.useAfter([{
   applyAfterware({ response }, next) {
-    if (response.status === 401) {
-      store.dispatch(logout());  // eslint-disable-line no-use-before-define
+    if (!response.ok) {
+      response.clone().text().then(bodyText => {
+        console.log(`Network Error: ${response.status} (${response.statusText}) - ${bodyText}`);
+        next();
+      });
+    } else {
+      response.clone().json().then(({ errors }) => {
+        if (errors) {
+          errors.map((e) => {
+            if (e.message === 'Unauthorized') {
+              return store.dispatch(logout());  // eslint-disable-line no-use-before-define
+            }
+            return console.log('GraphQL Error:', e.message);
+          });
+        }
+        next();
+      });
     }
-    next();
   },
 }]);
 
