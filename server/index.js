@@ -4,11 +4,10 @@ import bodyParser from 'body-parser';
 import { createServer } from 'http';
 import { SubscriptionServer } from 'subscriptions-transport-ws';
 import jwt from 'express-jwt';
-import bcrypt from 'bcrypt';
 import jsonwebtoken from 'jsonwebtoken';
 
 import { JWT_SECRET } from './config';
-import subscriptionManager from './subscriptions';
+import subscriptionManager, { getSubscriptionDetails } from './subscriptions';
 import executableSchema from './data/schema';
 import { User } from './data/connectors';
 import { subscriptionLogic } from './data/logic';
@@ -45,21 +44,27 @@ graphQLServer.listen(GRAPHQL_PORT, () => {
 // eslint-disable-next-line no-new
 new SubscriptionServer({
   subscriptionManager,
-  onSubscribe(parsedMessage, baseParams, connection) {
-    console.log(parsedMessage, baseParams);
-    const userPromise = new Promise((res, rej) => {
+  onSubscribe(parsedMessage, baseParams) {
+    const { subscriptionName, args } = getSubscriptionDetails({
+      baseParams,
+      schema: subscriptionManager.schema,
+    });
+
+    const user = new Promise((res, rej) => {
       if (baseParams.context.jwt) {
         jsonwebtoken.verify(baseParams.context.jwt, JWT_SECRET, (err, decoded) => {
           if (err) {
-            return rej('Invalid Token');
+            rej('Invalid Token');
           }
 
-          return User.findOne({ where: { id: decoded.id } });
+          res(User.findOne({ where: { id: decoded.id } }));
         });
+      } else {
+        res(null);
       }
     });
 
-    return userPromise.then(user => subscriptionLogic[baseParams.operationName](baseParams, baseParams.variables, { user }));
+    return subscriptionLogic[subscriptionName](baseParams, args, { user });
   },
 }, {
   server: graphQLServer,

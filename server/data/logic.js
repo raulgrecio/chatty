@@ -67,8 +67,8 @@ export const groupLogic = {
         return Group.create({
           name,
         }).then((group) => {
-          return group.addUsers([ctx.user, ...friends]).then(() => {
-            group.users = [ctx.user, ...friends];
+          return group.addUsers([user, ...friends]).then(() => {
+            group.users = [user, ...friends];
             return group;
           });
         });
@@ -101,8 +101,12 @@ export const groupLogic = {
           where: { id: user.id },
         }],
       }).then((group) => {
+        if (!group) {
+          Promise.reject('No group found');
+        }
+
         group.removeUser(user.id);
-        return { id };
+        return Promise.resolve({ id });
       });
     });
   },
@@ -165,7 +169,7 @@ export const userLogic = {
   query(_, args, ctx) {
     return getAuthenticatedUser(ctx).then((user) => {
       if (user.id === args.id || user.email === args.email) {
-        return ctx.user;
+        return user;
       }
 
       return Promise.reject('Unauthorized');
@@ -174,11 +178,19 @@ export const userLogic = {
 };
 
 export const subscriptionLogic = {
+  groupAdded(baseParams, args, ctx) {
+    return getAuthenticatedUser(ctx)
+      .then(user => {
+        baseParams.context = user;
+        return baseParams;
+      });
+  },
   messageAdded(baseParams, args, ctx) {
     return getAuthenticatedUser(ctx)
       .then(user => user.getGroups({ where: { id: { $in: [args.groupIds] } }, attributes: ['id'] })
       .then(groups => {
-        
+        baseParams.context = user;
+        return baseParams;
       }));
   },
 };
