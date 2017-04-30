@@ -10,6 +10,8 @@ import Messages from './messages.component';
 import FinalizeGroup from './finalize-group.component';
 import GroupDetails from './group-details.component';
 import NewGroup from './new-group.component';
+import Signin from './signin.component';
+import Settings from './settings.component';
 
 const styles = StyleSheet.create({
   container: {
@@ -68,10 +70,19 @@ export const Scenes = Actions.create(
       <Scene key="settingsTab" title="Settings" icon={TabIcon}>
         <Scene
           key="settings"
-          component={TestScene}
+          component={Settings}
           title="Settings"
         />
       </Scene>
+    </Scene>
+    <Scene key="signin" direction="vertical">
+      <Scene
+        key="signinModal"
+        component={Signin}
+        title="Chatty"
+        schema="modal"
+        panHandlers={null}
+      />
     </Scene>
     <Scene key="newGroup" direction="vertical">
       <Scene

@@ -1,5 +1,6 @@
 import { _ } from 'lodash';
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import {
   Alert,
   Image,
@@ -132,7 +133,6 @@ class FinalizeGroup extends Component {
     createGroup({
       name: this.state.name,
       userIds: _.map(this.state.selected, 'id'),
-      userId: 1, // fake user for now
     }).then((res) => {
       const group = res.data.createGroup;
       // TODO: want to pop back to groups and then jump into messages
@@ -213,9 +213,9 @@ FinalizeGroup.propTypes = {
 
 const createGroup = graphql(CREATE_GROUP_MUTATION, {
   props: ({ mutate }) => ({
-    createGroup: ({ name, userIds, userId }) =>
+    createGroup: ({ name, userIds }) =>
       mutate({
-        variables: { name, userIds, userId },
+        variables: { name, userIds },
         updateQueries: {
           user: (previousResult, { mutationResult }) => {
             const newGroup = mutationResult.data.createGroup;
