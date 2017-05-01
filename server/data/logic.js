@@ -15,10 +15,10 @@ function getAuthenticatedUser(ctx) {
 }
 
 export const messageLogic = {
-  from(message, args, ctx) {
+  from(message) {
     return message.getUser({ attributes: ['id', 'username'] });
   },
-  to(message, args, ctx) {
+  to(message) {
     return message.getGroup({ attributes: ['id', 'name'] });
   },
   createMessage(_, { text, groupId }, ctx) {
@@ -38,10 +38,10 @@ export const messageLogic = {
 };
 
 export const groupLogic = {
-  users(group, args, ctx) {
+  users(group) {
     return group.getUsers({ attributes: ['id', 'username'] });
   },
-  messages(group, args, ctx) {
+  messages(group, args) {
     return Message.findAll({
       where: { groupId: group.id },
       order: [['createdAt', 'DESC']],
@@ -50,23 +50,21 @@ export const groupLogic = {
     });
   },
   query(_, { id }, ctx) {
-    return getAuthenticatedUser(ctx).then((user) => {
-      return Group.findOne({
-        where: { id },
-        include: [{
-          model: User,
-          where: { id: user.id },
-        }],
-      });
-    });
+    return getAuthenticatedUser(ctx).then(user => Group.findOne({
+      where: { id },
+      include: [{
+        model: User,
+        where: { id: user.id },
+      }],
+    }));
   },
   createGroup(_, { name, userIds }, ctx) {
     return getAuthenticatedUser(ctx)
       .then(user => user.getFriends({ where: { id: { $in: userIds } } })
-      .then((friends) => {
+      .then((friends) => {  // eslint-disable-line arrow-body-style
         return Group.create({
           name,
-        }).then((group) => {
+        }).then((group) => {  // eslint-disable-line arrow-body-style
           return group.addUsers([user, ...friends]).then(() => {
             group.users = [user, ...friends];
             return group;
@@ -75,7 +73,7 @@ export const groupLogic = {
       }));
   },
   deleteGroup(_, { id }, ctx) {
-    return getAuthenticatedUser(ctx).then((user) => {
+    return getAuthenticatedUser(ctx).then((user) => { // eslint-disable-line arrow-body-style
       return Group.findOne({
         where: { id },
         include: [{
@@ -111,7 +109,7 @@ export const groupLogic = {
     });
   },
   updateGroup(_, { id, name }, ctx) {
-    return getAuthenticatedUser(ctx).then((user) => {
+    return getAuthenticatedUser(ctx).then((user) => {  // eslint-disable-line arrow-body-style
       return Group.findOne({
         where: { id },
         include: [{
@@ -180,15 +178,24 @@ export const userLogic = {
 export const subscriptionLogic = {
   groupAdded(baseParams, args, ctx) {
     return getAuthenticatedUser(ctx)
-      .then(user => {
+      .then((user) => {
+        if (user.id !== args.userId) {
+          return Promise.reject('Unauthorized');
+        }
+
         baseParams.context = user;
         return baseParams;
       });
   },
   messageAdded(baseParams, args, ctx) {
     return getAuthenticatedUser(ctx)
-      .then(user => user.getGroups({ where: { id: { $in: [args.groupIds] } }, attributes: ['id'] })
-      .then(groups => {
+      .then(user => user.getGroups({ where: { id: { $in: args.groupIds } }, attributes: ['id'] })
+      .then((groups) => {
+        // user attempted to subscribe to some groups without access
+        if (args.groupIds.length > groups.length) {
+          return Promise.reject('Unauthorized');
+        }
+
         baseParams.context = user;
         return baseParams;
       }));

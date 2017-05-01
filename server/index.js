@@ -7,7 +7,7 @@ import jwt from 'express-jwt';
 import jsonwebtoken from 'jsonwebtoken';
 
 import { JWT_SECRET } from './config';
-import subscriptionManager, { getSubscriptionDetails } from './subscriptions';
+import { subscriptionManager, getSubscriptionDetails } from './subscriptions';
 import executableSchema from './data/schema';
 import { User } from './data/connectors';
 import { subscriptionLogic } from './data/logic';
@@ -38,8 +38,8 @@ app.use('/graphiql', graphiqlExpress({
 const graphQLServer = createServer(app);
 
 graphQLServer.listen(GRAPHQL_PORT, () => {
-  console.log(`GraphQL Server is now running on http://localhost:${GRAPHQL_PORT}${GRAPHQL_PATH}`);
-  console.log(`GraphQL Subscriptions are now running on ws://localhost:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`);
+  console.log(`GraphQL Server is now running on http://localhost:${GRAPHQL_PORT}${GRAPHQL_PATH}`); // eslint-disable-line no-console
+  console.log(`GraphQL Subscriptions are now running on ws://localhost:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`); // eslint-disable-line no-console
 });
 
 // eslint-disable-next-line no-new

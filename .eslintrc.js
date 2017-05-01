@@ -11,6 +11,7 @@ module.exports = {
         "react/no-unused-prop-types": [2, {
             "skipShapeProps": true
         }],
+        "react/no-multi-comp": [0],
         "no-bitwise": [0],
     },
 };

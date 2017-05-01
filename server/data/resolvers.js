@@ -56,7 +56,11 @@ export const Resolvers = {
           return bcrypt.compare(password, user.password).then((res) => {
             if (res) {
               // create jwt
-              const token = jwt.sign({ id: user.id, email: user.email, version: user.version }, JWT_SECRET);
+              const token = jwt.sign({
+                id: user.id,
+                email: user.email,
+                version: user.version,
+              }, JWT_SECRET);
               user.jwt = token;
               return { jwt: token, id: user.id };
             }

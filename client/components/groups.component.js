@@ -191,7 +191,6 @@ class Groups extends Component {
     // we don't resubscribe on changed props, because it never happens in our app
     if (!nextProps.loading && nextProps.user &&
       (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
-
       if (this.messagesSubscription) {
         this.messagesSubscription(); // unsubscribe from old
       }
@@ -258,6 +257,7 @@ class Groups extends Component {
     }
   }
 
+  // eslint-disable-next-line
   goToMessages(group) {
     Actions.messages({ groupId: group.id, title: group.name });
   }
