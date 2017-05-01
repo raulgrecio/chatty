@@ -242,6 +242,16 @@ class Groups extends Component {
     }
   }
 
+  componentWillUnmount() {
+    if (this.messagesSubscription) {
+      this.messagesSubscription(); // unsubscribe
+    }
+
+    if (this.groupSubscription) {
+      this.groupSubscription(); // unsubscribe
+    }
+  }
+
   goToMessages(group) {
     Actions.messages({ groupId: group.id, title: group.name });
   }

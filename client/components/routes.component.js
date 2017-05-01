@@ -65,6 +65,7 @@ export const Scenes = Actions.create(
           key="groups"
           component={Groups}
           title="Chats"
+          hideBackImage
         />
       </Scene>
       <Scene key="settingsTab" title="Settings" icon={TabIcon}>
@@ -72,6 +73,7 @@ export const Scenes = Actions.create(
           key="settings"
           component={Settings}
           title="Settings"
+          hideBackImage
         />
       </Scene>
     </Scene>

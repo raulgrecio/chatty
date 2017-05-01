@@ -3169,7 +3169,7 @@ strip-json-comments@~2.0.1:
 
 "subscriptions-transport-ws@https://github.com/srtucker22/subscriptions-transport-ws.git":
   version "0.5.5"
-  resolved "https://github.com/srtucker22/subscriptions-transport-ws.git#43f102ee6aeab1c61c2bf690731b8035f561a3e1"
+  resolved "https://github.com/srtucker22/subscriptions-transport-ws.git#0b15e82fd2db396996d63a34956cc571f9f46cfa"
   dependencies:
     "@types/ws" "0.0.38"
     backo2 "^1.0.2"

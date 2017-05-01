@@ -208,8 +208,8 @@ class NewGroup extends Component {
     Actions.refresh({
       onLeft: Actions.pop,
       leftTitle: 'Back',
-      rightTitle: selected ? 'Next' : undefined,
-      onRight: selected ? this.finalizeGroup : undefined,
+      rightTitle: selected && selected.length ? 'Next' : undefined,
+      onRight: selected && selected.length ? this.finalizeGroup : undefined,
       selected,
     });
   }

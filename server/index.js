@@ -27,6 +27,7 @@ app.use('/graphql', bodyParser.json(), jwt({
   context: {
     user: req.user ? User.findOne({ where: { id: req.user.id } }) : null,
   },
+  debug: true, // false to not log errors
 })));
 
 app.use('/graphiql', graphiqlExpress({

@@ -3881,7 +3881,7 @@ strip-bom@^2.0.0:
 
 "subscriptions-transport-ws@https://github.com/srtucker22/subscriptions-transport-ws.git":
   version "0.5.5"
-  resolved "https://github.com/srtucker22/subscriptions-transport-ws.git#b47393ca849b4253fc4b37659f0ef0ed3bd34ae0"
+  resolved "https://github.com/srtucker22/subscriptions-transport-ws.git#0b15e82fd2db396996d63a34956cc571f9f46cfa"
   dependencies:
     "@types/ws" "0.0.38"
     backo2 "^1.0.2"

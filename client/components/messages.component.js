@@ -141,6 +141,12 @@ class Messages extends Component {
     }
   }
 
+  componentWillUnmount() {
+    if (this.subscription) {
+      this.subscription(); // unsubscribe
+    }
+  }
+
   onRefresh() {
     this.setState({ refreshing: true });
     this.props.loadMoreEntries().then(() => {
