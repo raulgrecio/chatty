@@ -16,6 +16,7 @@ import PropTypes from 'prop-types';
 import randomColor from 'randomcolor';
 import { graphql, compose } from 'react-apollo';
 import update from 'immutability-helper';
+import { connect } from 'react-redux';
 
 import Message from './message.component';
 import MessageInput from './message-input.component';
@@ -99,6 +100,7 @@ class Messages extends Component {
         // apply a color to each user
         newData.group.users.map((user) => {
           usernameColors[user.username] = this.state.usernameColors[user.username] || randomColor();
+          return usernameColors[user.username];
         });
       }
 
@@ -140,6 +142,12 @@ class Messages extends Component {
     }
   }
 
+  componentWillUnmount() {
+    if (this.subscription) {
+      this.subscription(); // unsubscribe
+    }
+  }
+
   onRefresh() {
     this.setState({ refreshing: true });
     this.props.loadMoreEntries().then(() => {
@@ -156,7 +164,7 @@ class Messages extends Component {
   send(text) {
     this.props.createMessage({
       groupId: this.props.groupId,
-      userId: 1, // faking the user for now
+      userId: this.props.auth.id,
       text,
     });
 
@@ -185,7 +193,7 @@ class Messages extends Component {
   }
 
   render() {
-    const { loading, group } = this.props;
+    const { auth, loading, group } = this.props;
 
     // render loading placeholder while we fetch messages
     if (loading && !group) {
@@ -226,7 +234,7 @@ class Messages extends Component {
             <Message
               color={this.state.usernameColors[message.from.username]}
               message={message}
-              isCurrentUser={message.from.id === 1}
+              isCurrentUser={message.from.id === auth.id}
             />
           )}
         />
@@ -237,6 +245,10 @@ class Messages extends Component {
 }
 
 Messages.propTypes = {
+  auth: PropTypes.shape({
+    id: PropTypes.number,
+    jwt: PropTypes.string,
+  }),
   createMessage: PropTypes.func,
   group: PropTypes.shape({
     messages: PropTypes.array,
@@ -285,9 +297,9 @@ const groupQuery = graphql(GROUP_QUERY, {
 
 const createMessage = graphql(CREATE_MESSAGE_MUTATION, {
   props: ({ ownProps, mutate }) => ({
-    createMessage: ({ text, userId, groupId }) =>
+    createMessage: ({ text, groupId }) =>
       mutate({
-        variables: { text, userId, groupId },
+        variables: { text, groupId },
         optimisticResponse: {
           __typename: 'Mutation',
           createMessage: {
@@ -297,7 +309,7 @@ const createMessage = graphql(CREATE_MESSAGE_MUTATION, {
             createdAt: new Date().toISOString(),
             from: {
               __typename: 'User',
-              id: 1,
+              id: ownProps.auth.id,
               username: 'Justyn.Kautzer',
             },
           },
@@ -323,7 +335,12 @@ const createMessage = graphql(CREATE_MESSAGE_MUTATION, {
   }),
 });
 
+const mapStateToProps = ({ auth }) => ({
+  auth,
+});
+
 export default compose(
+  connect(mapStateToProps),
   groupQuery,
   createMessage,
 )(Messages);

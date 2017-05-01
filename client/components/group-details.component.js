@@ -1,5 +1,6 @@
 // TODO: update group functionality
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import {
   ActivityIndicator,
   Button,
@@ -81,13 +82,13 @@ const styles = StyleSheet.create({
   },
 });
 
-export class GroupDetails extends Component {
+class GroupDetails extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
-        .cloneWithRows(props.data.group.users),
+        .cloneWithRows(props.loading ? [] : props.group.users),
     };
 
     this.deleteGroup = this.deleteGroup.bind(this);
@@ -95,42 +96,39 @@ export class GroupDetails extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    const newData = nextProps.data;
-    const oldData = this.props.data;
-
-    if (!!newData.group && !!newData.group.users && newData.group !== oldData.group) {
+    if (nextProps.group && nextProps.group.users && nextProps.group !== this.props.group) {
       this.setState({
         selected: nextProps.selected,
-        ds: this.state.ds.cloneWithRows(newData.group.users),
+        ds: this.state.ds.cloneWithRows(nextProps.group.users),
       });
     }
   }
 
   deleteGroup() {
     this.props.deleteGroup({ id: this.props.id })
-      .then((res) => {
+      .then(() => {
         Actions.tabs({ type: 'reset' });
       })
       .catch((e) => {
-        console.error(e);
+        console.log(e);   // eslint-disable-line no-console
       });
   }
 
   leaveGroup() {
-    this.props.leaveGroup({ id: this.props.id, userId: 1 }) // fake user for now
-      .then((res) => {
+    this.props.leaveGroup({ id: this.props.id })
+      .then(() => {
         Actions.tabs({ type: 'reset' });
       })
       .catch((e) => {
-        console.error(e);
+        console.log(e);   // eslint-disable-line no-console
       });
   }
 
   render() {
-    const { data } = this.props;
+    const { group, loading } = this.props;
 
     // render loading placeholder while we fetch messages
-    if (!data || data.loading) {
+    if (!group || loading) {
       return (
         <View style={[styles.loading, styles.container]}>
           <ActivityIndicator />
@@ -155,11 +153,11 @@ export class GroupDetails extends Component {
                   <Text>edit</Text>
                 </TouchableOpacity>
                 <View style={styles.groupNameBorder}>
-                  <Text style={styles.groupName}>{data.group.name}</Text>
+                  <Text style={styles.groupName}>{group.name}</Text>
                 </View>
               </View>
               <Text style={styles.participants}>
-                {`participants: ${data.group.users.length}`.toUpperCase()}
+                {`participants: ${group.users.length}`.toUpperCase()}
               </Text>
             </View>
           )}
@@ -185,17 +183,27 @@ export class GroupDetails extends Component {
 }
 
 GroupDetails.propTypes = {
-  data: PropTypes.shape({
-    loading: PropTypes.bool.isRequired,
-    group: PropTypes.object,
-  }).isRequired,
+  loading: PropTypes.bool,
+  group: PropTypes.shape({
+    id: PropTypes.number,
+    name: PropTypes.string,
+    users: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.number,
+      username: PropTypes.string,
+    })),
+  }),
   deleteGroup: PropTypes.func.isRequired,
   leaveGroup: PropTypes.func.isRequired,
   id: PropTypes.number.isRequired,
+  selected: PropTypes.arrayOf(PropTypes.any), // eslint-disable-line react/no-unused-prop-types
 };
 
-const group = graphql(GROUP_QUERY, {
+const groupQuery = graphql(GROUP_QUERY, {
   options: ({ id }) => ({ variables: { groupId: id } }),
+  props: ({ data: { loading, group } }) => ({
+    loading,
+    group,
+  }),
 });
 
 const deleteGroup = graphql(DELETE_GROUP_MUTATION, {
@@ -225,7 +233,7 @@ const leaveGroup = graphql(LEAVE_GROUP_MUTATION, {
   props: ({ ownProps, mutate }) => ({
     leaveGroup: () =>
       mutate({
-        variables: { id: ownProps.id, userId: 1 }, // fake user for now
+        variables: { id: ownProps.id },
         updateQueries: {
           user: (previousResult, { mutationResult }) => {
             const removedGroup = mutationResult.data.leaveGroup;
@@ -245,7 +253,7 @@ const leaveGroup = graphql(LEAVE_GROUP_MUTATION, {
 });
 
 export default compose(
-  group,
+  groupQuery,
   deleteGroup,
   leaveGroup,
 )(GroupDetails);

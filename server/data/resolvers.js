@@ -1,71 +1,96 @@
 import GraphQLDate from 'graphql-date';
-import { Group, Message, User } from './connectors';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../config';
+import { User } from './connectors';
+import { groupLogic, messageLogic, userLogic } from './logic';
 import { pubsub } from '../subscriptions';
 
 export const Resolvers = {
   Date: GraphQLDate,
 
   Query: {
-    group(_, args) {
-      return Group.find({ where: args });
+    group(_, args, ctx) {
+      return groupLogic.query(_, args, ctx);
     },
 
-    user(_, args) {
-      return User.findOne({ where: args });
+    user(_, args, ctx) {
+      return userLogic.query(_, args, ctx);
     },
   },
 
   Mutation: {
-    createMessage(_, { text, userId, groupId }) {
-      return Message.create({
-        userId,
-        text,
-        groupId,
-      }).then((message) => {
-        // Publish subscription notification with the whole message
-        pubsub.publish('messageAdded', message);
-        return message;
+    createMessage(_, args, ctx) {
+      return messageLogic.createMessage(_, args, ctx)
+        .then((message) => {
+          // Publish subscription notification with the whole message
+          pubsub.publish('messageAdded', message);
+          return message;
+        });
+    },
+
+    createGroup(_, args, ctx) {
+      return groupLogic.createGroup(_, args, ctx).then((group) => {
+        pubsub.publish('groupAdded', group);
+        return group;
       });
     },
 
-    createGroup(_, { name, userIds, userId }) {
-      return User.findOne({ where: { id: userId } })
-        .then((user) => {
-          return user.getFriends({ where: { id: { $in: userIds } } })
-            .then((friends) => {
-              return Group.create({
-                name,
-              }).then((group) => {
-                return group.addUsers([user, ...friends]).then((res) => {
-                  group.users = [user, ...friends];
-                  pubsub.publish('groupAdded', group);
-                  return group;
-                });
-              });
-            });
-        });
+    deleteGroup(_, args, ctx) {
+      return groupLogic.deleteGroup(_, args, ctx);
     },
 
-    deleteGroup(_, { id }) {
-      return Group.find({ where: id })
-        .then(group => group.getUsers()
-          .then(users => group.removeUsers(users))
-          .then(() => Message.destroy({ where: { groupId: group.id } }))
-          .then(() => group.destroy()),
-        );
+    leaveGroup(_, args, ctx) {
+      return groupLogic.leaveGroup(_, args, ctx);
     },
 
-    leaveGroup(_, { id, userId }) {
-      return Group.findOne({ where: { id } })
-        .then((group) => {
-          group.removeUser(userId);
-          return { id };
-        });
+    updateGroup(_, args, ctx) {
+      return groupLogic.updateGroup(_, args, ctx);
     },
 
-    updateGroup(_, { id, name }) {
-      return Group.findOne({ where: { id } })
-        .then(group => group.update({ name }));
+    login(_, { email, password }) {
+      // find user by email
+      return User.findOne({ where: { email } }).then((user) => {
+        if (user) {
+          // validate password
+          return bcrypt.compare(password, user.password).then((res) => {
+            if (res) {
+              // create jwt
+              const token = jwt.sign({
+                id: user.id,
+                email: user.email,
+                version: user.version,
+              }, JWT_SECRET);
+              user.jwt = token;
+              return { jwt: token, id: user.id };
+            }
+
+            return Promise.reject('password incorrect');
+          });
+        }
+
+        return Promise.reject('email not found');
+      });
+    },
+
+    signup(_, { email, password, username }) {
+      // find user by email
+      return User.findOne({ where: { email } }).then((existing) => {
+        if (!existing) {
+          // hash password and create user
+          return bcrypt.hash(password, 10).then(hash => User.create({
+            email,
+            password: hash,
+            username: username || email,
+          })).then((user) => {
+            const { id } = user;
+            const token = jwt.sign({ id, email }, JWT_SECRET);
+            return { jwt: token, id };
+          });
+        }
+
+        return Promise.reject('email already exists'); // email already exists
+      });
     },
   },
 
@@ -80,40 +105,38 @@ export const Resolvers = {
   },
 
   Group: {
-    users(group) {
-      return group.getUsers();
+    users(group, args, ctx) {
+      return groupLogic.users(group, args, ctx);
     },
-    messages(group, args) {
-      return Message.findAll({
-        where: { groupId: group.id },
-        order: [['createdAt', 'DESC']],
-        limit: args.limit,
-        offset: args.offset,
-      });
+    messages(group, args, ctx) {
+      return groupLogic.messages(group, args, ctx);
     },
   },
 
   Message: {
-    to(message) {
-      return message.getGroup();
+    to(message, args, ctx) {
+      return messageLogic.to(message, args, ctx);
     },
-    from(message) {
-      return message.getUser();
+    from(message, args, ctx) {
+      return messageLogic.from(message, args, ctx);
     },
   },
 
   User: {
-    messages(user) {
-      return Message.findAll({
-        where: { userId: user.id },
-        order: [['createdAt', 'DESC']],
-      });
+    email(user, args, ctx) {
+      return userLogic.email(user, args, ctx);
     },
-    groups(user) {
-      return user.getGroups();
+    friends(user, args, ctx) {
+      return userLogic.friends(user, args, ctx);
     },
-    friends(user) {
-      return user.getFriends();
+    groups(user, args, ctx) {
+      return userLogic.groups(user, args, ctx);
+    },
+    jwt(user, args, ctx) {
+      return userLogic.jwt(user, args, ctx);
+    },
+    messages(user, args, ctx) {
+      return userLogic.messages(user, args, ctx);
     },
   },
 };

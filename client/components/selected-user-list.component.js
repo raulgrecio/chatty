@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import {
   Image,
   ListView,
@@ -82,7 +83,7 @@ SelectedUserListItem.propTypes = {
   remove: PropTypes.func,
 };
 
-export class SelectedUserList extends Component {
+class SelectedUserList extends Component {
   constructor(props) {
     super(props);
 
@@ -107,7 +108,7 @@ export class SelectedUserList extends Component {
   }
 }
 SelectedUserList.propTypes = {
-  dataSource: PropTypes.object,
+  dataSource: PropTypes.instanceOf(ListView.DataSource),
   remove: PropTypes.func,
 };
 

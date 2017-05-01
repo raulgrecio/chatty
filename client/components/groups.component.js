@@ -18,6 +18,7 @@ import moment from 'moment';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import update from 'immutability-helper';
 import { map } from 'lodash';
+import { connect } from 'react-redux';
 
 import USER_QUERY from '../graphql/user.query';
 import MESSAGE_ADDED_SUBSCRIPTION from '../graphql/messageAdded.subscription';
@@ -174,7 +175,11 @@ class Groups extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!nextProps.loading && nextProps.user !== this.props.user) {
+    if (!nextProps.auth.jwt && !nextProps.auth.loading) {
+      Actions.signin();
+    } else if (nextProps.user && nextProps.user.groups &&
+      // check for new messages
+      (!this.props.user || nextProps.user.groups !== this.props.user.groups)) {
       // convert groups Array to ListView.DataSource
       // we will use this.state.ds to populate our ListView
       this.setState({
@@ -184,39 +189,46 @@ class Groups extends Component {
     }
 
     // we don't resubscribe on changed props, because it never happens in our app
-    if (!this.messagesSubscription && !nextProps.loading) {
-      this.messagesSubscription = nextProps.subscribeToMore({
-        document: MESSAGE_ADDED_SUBSCRIPTION,
-        variables: { groupIds: map(nextProps.user.groups, 'id') },
-        updateQuery: (previousResult, { subscriptionData }) => {
-          const previousGroups = previousResult.user.groups;
-          const newMessage = subscriptionData.data.messageAdded;
+    if (!nextProps.loading && nextProps.user &&
+      (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
+      if (this.messagesSubscription) {
+        this.messagesSubscription(); // unsubscribe from old
+      }
 
-          const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
+      if (nextProps.user.groups.length) {
+        this.messagesSubscription = nextProps.subscribeToMore({
+          document: MESSAGE_ADDED_SUBSCRIPTION,
+          variables: { groupIds: map(nextProps.user.groups, 'id') },
+          updateQuery: (previousResult, { subscriptionData }) => {
+            const previousGroups = previousResult.user.groups;
+            const newMessage = subscriptionData.data.messageAdded;
 
-          // if it's our own mutation, we might get the subscription result
-          // after the mutation result.
-          if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
-            return previousResult;
-          }
+            const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
 
-          return update(previousResult, {
-            user: {
-              groups: {
-                [groupIndex]: {
-                  messages: { $set: [newMessage] },
+            // if it's our own mutation, we might get the subscription result
+            // after the mutation result.
+            if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
+              return previousResult;
+            }
+
+            return update(previousResult, {
+              user: {
+                groups: {
+                  [groupIndex]: {
+                    messages: { $set: [newMessage] },
+                  },
                 },
               },
-            },
-          });
-        },
-      });
+            });
+          },
+        });
+      }
     }
 
-    if (!this.groupSubscription && !nextProps.loading) {
+    if (!this.groupSubscription && !nextProps.loading && nextProps.user) {
       this.groupSubscription = nextProps.subscribeToMore({
         document: GROUP_ADDED_SUBSCRIPTION,
-        variables: { userId: 1 }, // last time we'll fake the user!
+        variables: { userId: nextProps.user.id }, // last time we'll fake the user!
         updateQuery: (previousResult, { subscriptionData }) => {
           const previousGroups = previousResult.user.groups;
           const newGroup = subscriptionData.data.groupAdded;
@@ -237,6 +249,17 @@ class Groups extends Component {
     }
   }
 
+  componentWillUnmount() {
+    if (this.messagesSubscription) {
+      this.messagesSubscription(); // unsubscribe
+    }
+
+    if (this.groupSubscription) {
+      this.groupSubscription(); // unsubscribe
+    }
+  }
+
+  // eslint-disable-next-line
   goToMessages(group) {
     Actions.messages({ groupId: group.id, title: group.name });
   }
@@ -249,10 +272,10 @@ class Groups extends Component {
   }
 
   render() {
-    const { loading, user } = this.props;
+    const { auth, loading, user } = this.props;
 
     // render loading placeholder while we fetch messages
-    if (loading) {
+    if (auth.loading || loading) {
       return (
         <View style={[styles.loading, styles.container]}>
           <ActivityIndicator />
@@ -291,9 +314,14 @@ class Groups extends Component {
   }
 }
 Groups.propTypes = {
+  auth: PropTypes.shape({
+    loading: PropTypes.bool,
+    id: PropTypes.number,
+    jwt: PropTypes.string,
+  }),
   loading: PropTypes.bool,
   refetch: PropTypes.func,
-  subscribeToMore: PropTypes.func,
+  subscribeToMore: PropTypes.func,  // eslint-disable-line react/no-unused-prop-types
   user: PropTypes.shape({
     id: PropTypes.number.isRequired,
     email: PropTypes.string.isRequired,
@@ -307,12 +335,18 @@ Groups.propTypes = {
 };
 
 const userQuery = graphql(USER_QUERY, {
-  options: () => ({ variables: { id: 1 } }),
+  skip: ownProps => !ownProps.auth || !ownProps.auth.jwt,
+  options: ownProps => ({ variables: { id: ownProps.auth.id } }),
   props: ({ data: { loading, refetch, user, subscribeToMore } }) => ({
     loading, refetch, user, subscribeToMore,
   }),
 });
 
+const mapStateToProps = ({ auth }) => ({
+  auth,
+});
+
 export default compose(
+  connect(mapStateToProps),
   userQuery,
 )(Groups);

@@ -15,10 +15,12 @@ import { graphql, compose } from 'react-apollo';
 import AlphabetListView from 'react-native-alphabetlistview';
 import update from 'immutability-helper';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { connect } from 'react-redux';
 
 import SelectedUserList from './selected-user-list.component';
 import USER_QUERY from '../graphql/user.query';
 
+// eslint-disable-next-line
 const sortObject = o => Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
 
 const styles = StyleSheet.create({
@@ -73,37 +75,31 @@ const styles = StyleSheet.create({
   },
 });
 
-class SectionHeader extends Component {
-  render() {
-    // inline styles used for brevity, use a stylesheet when possible
-    const textStyle = {
-      textAlign: 'center',
-      color: '#fff',
-      fontWeight: '700',
-      fontSize: 16,
-    };
+const SectionHeader = ({ title }) => {
+  // inline styles used for brevity, use a stylesheet when possible
+  const textStyle = {
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  };
 
-    const viewStyle = {
-      backgroundColor: '#ccc',
-    };
-    return (
-      <View style={viewStyle}>
-        <Text style={textStyle}>{this.props.title}</Text>
-      </View>
-    );
-  }
-}
+  const viewStyle = {
+    backgroundColor: '#ccc',
+  };
+  return (
+    <View style={viewStyle}>
+      <Text style={textStyle}>{title}</Text>
+    </View>
+  );
+};
 SectionHeader.propTypes = {
   title: PropTypes.string,
 };
 
-class SectionItem extends Component {
-  render() {
-    return (
-      <Text style={{ color: 'blue' }}>{this.props.title}</Text>
-    );
-  }
-}
+const SectionItem = ({ title }) => (
+  <Text style={{ color: 'blue' }}>{title}</Text>
+);
 SectionItem.propTypes = {
   title: PropTypes.string,
 };
@@ -165,8 +161,8 @@ class NewGroup extends Component {
 
     this.state = {
       selected: props.selected || [],
-      friends: !!props.data && !!props.data.user ?
-        _.groupBy(props.data.user.friends, friend => friend.username.charAt(0).toUpperCase()) : [],
+      friends: props.user ?
+        _.groupBy(props.user.friends, friend => friend.username.charAt(0).toUpperCase()) : [],
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 }),
     };
 
@@ -179,14 +175,11 @@ class NewGroup extends Component {
     this.refreshNavigation(this.state.selected);
   }
 
-  componentWillReceiveProps(nextProps, nextState) {
-    const newData = nextProps.data;
-    const oldData = this.props.data;
-
+  componentWillReceiveProps(nextProps) {
     const state = {};
-    if (newData.user && newData.user.friends && newData.user !== oldData.user) {
+    if (nextProps.user && nextProps.user.friends && nextProps.user !== this.props.user) {
       state.friends = sortObject(
-        _.groupBy(newData.user.friends, friend => friend.username.charAt(0).toUpperCase()),
+        _.groupBy(nextProps.user.friends, friend => friend.username.charAt(0).toUpperCase()),
       );
     }
 
@@ -210,8 +203,8 @@ class NewGroup extends Component {
     Actions.refresh({
       onLeft: Actions.pop,
       leftTitle: 'Back',
-      rightTitle: selected ? 'Next' : undefined,
-      onRight: selected ? this.finalizeGroup : undefined,
+      rightTitle: selected && selected.length ? 'Next' : undefined,
+      onRight: selected && selected.length ? this.finalizeGroup : undefined,
       selected,
     });
   }
@@ -219,8 +212,8 @@ class NewGroup extends Component {
   finalizeGroup() {
     Actions.finalizeGroup({
       selected: this.state.selected,
-      friendCount: this.props.data.user.friends.length,
-      userId: this.props.data.user.id,
+      friendCount: this.props.user.friends.length,
+      userId: this.props.user.id,
     });
   }
 
@@ -248,10 +241,10 @@ class NewGroup extends Component {
   }
 
   render() {
-    const { data } = this.props;
+    const { user, loading } = this.props;
 
     // render loading placeholder while we fetch messages
-    if (!data || data.loading) {
+    if (loading || !user) {
       return (
         <View style={[styles.loading, styles.container]}>
           <ActivityIndicator />
@@ -286,17 +279,33 @@ class NewGroup extends Component {
 }
 
 NewGroup.propTypes = {
-  data: PropTypes.shape({
-    loading: PropTypes.bool.isRequired,
-    user: PropTypes.object,
+  auth: PropTypes.shape({  // eslint-disable-line react/no-unused-prop-types
+    id: PropTypes.number,
+    jwt: PropTypes.string,
   }),
-  selected: PropTypes.array,
+  loading: PropTypes.bool.isRequired,
+  user: PropTypes.shape({
+    id: PropTypes.number,
+    friends: PropTypes.arrayOf(PropTypes.shape({
+      id: PropTypes.number,
+      username: PropTypes.string,
+    })),
+  }),
+  selected: PropTypes.arrayOf(PropTypes.object),
 };
 
-const user = graphql(USER_QUERY, {
-  options: () => ({ variables: { id: 1 } }),
+const userQuery = graphql(USER_QUERY, {
+  options: ({ auth }) => ({ variables: { id: auth.id } }),
+  props: ({ data: { loading, user } }) => ({
+    loading, user,
+  }),
+});
+
+const mapStateToProps = ({ auth }) => ({
+  auth,
 });
 
 export default compose(
-  user,
+  connect(mapStateToProps),
+  userQuery,
 )(NewGroup);

@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import faker from 'faker';
 import Sequelize from 'sequelize';
+import bcrypt from 'bcrypt';
 
 const db = new Sequelize('chatty', null, null, {
   dialect: 'sqlite',
@@ -20,6 +21,7 @@ const UserModel = db.define('user', {
   email: { type: Sequelize.STRING },
   username: { type: Sequelize.STRING },
   password: { type: Sequelize.STRING },
+  version: { type: Sequelize.INTEGER }, // version the password
 });
 
 // users belong to multiple groups
@@ -43,18 +45,20 @@ const USERS_PER_GROUP = 5;
 const MESSAGES_PER_USER = 5;
 
 faker.seed(123);
-db.sync({ force: true }).then(() => {
-  return _.times(GROUPS, () => {
+db.sync({ force: true }).then(() => {  // eslint-disable-line arrow-body-style
+  return _.times(GROUPS, () => {  // eslint-disable-line arrow-body-style
     return GroupModel.create({
       name: faker.lorem.words(3),
-    }).then((group) => {
+    }).then((group) => {  // eslint-disable-line arrow-body-style
       return _.times(USERS_PER_GROUP, () => {
         const password = faker.internet.password();
-        return group.createUser({
+        return bcrypt.hash(password, 10).then(hash => group.createUser({
           email: faker.internet.email(),
           username: faker.internet.userName(),
-          password,
+          password: hash,
+          version: 1,
         }).then((user) => {
+          // eslint-disable-next-line no-console
           console.log('{email, username, password}', `{${user.email}, ${user.username}, ${password}}`);
           _.times(MESSAGES_PER_USER, () => MessageModel.create({
             userId: user.id,
@@ -63,7 +67,7 @@ db.sync({ force: true }).then(() => {
           }));
 
           return user;
-        });
+        }));
       });
     }).then((userPromises) => {
       // make users friends with all users in the group

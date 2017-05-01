@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Router, Scene, Actions } from 'react-native-router-flux';
 import { Text, View, StyleSheet } from 'react-native';
@@ -10,6 +10,8 @@ import Messages from './messages.component';
 import FinalizeGroup from './finalize-group.component';
 import GroupDetails from './group-details.component';
 import NewGroup from './new-group.component';
+import Signin from './signin.component';
+import Settings from './settings.component';
 
 const styles = StyleSheet.create({
   container: {
@@ -30,25 +32,13 @@ const styles = StyleSheet.create({
   },
 });
 
-const TestScene = props => (
+const TabIcon = ({ title, selected }) => (
   <View style={styles.container}>
-    <Text>
-      {props.title}
+    <Text style={[styles.tabText, selected ? styles.selected : undefined]}>
+      {title}
     </Text>
   </View>
 );
-
-class TabIcon extends Component {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={[styles.tabText, this.props.selected ? styles.selected : undefined]}>
-          {this.props.title}
-        </Text>
-      </View>
-    );
-  }
-}
 TabIcon.propTypes = {
   selected: PropTypes.bool,
   title: PropTypes.string.isRequired,
@@ -63,15 +53,26 @@ export const Scenes = Actions.create(
           key="groups"
           component={Groups}
           title="Chats"
+          hideBackImage
         />
       </Scene>
       <Scene key="settingsTab" title="Settings" icon={TabIcon}>
         <Scene
           key="settings"
-          component={TestScene}
+          component={Settings}
           title="Settings"
+          hideBackImage
         />
       </Scene>
+    </Scene>
+    <Scene key="signin" direction="vertical">
+      <Scene
+        key="signinModal"
+        component={Signin}
+        title="Chatty"
+        schema="modal"
+        panHandlers={null}
+      />
     </Scene>
     <Scene key="newGroup" direction="vertical">
       <Scene
