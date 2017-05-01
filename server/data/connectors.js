@@ -21,6 +21,7 @@ const UserModel = db.define('user', {
   email: { type: Sequelize.STRING },
   username: { type: Sequelize.STRING },
   password: { type: Sequelize.STRING },
+  version: { type: Sequelize.INTEGER }, // version the password
 });
 
 // users belong to multiple groups
@@ -55,6 +56,7 @@ db.sync({ force: true }).then(() => {
           email: faker.internet.email(),
           username: faker.internet.userName(),
           password: hash,
+          version: 1,
         }).then((user) => {
           console.log('{email, username, password}', `{${user.email}, ${user.username}, ${password}}`);
           _.times(MESSAGES_PER_USER, () => MessageModel.create({

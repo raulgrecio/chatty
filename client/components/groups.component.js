@@ -189,7 +189,13 @@ class Groups extends Component {
     }
 
     // we don't resubscribe on changed props, because it never happens in our app
-    if (!this.messagesSubscription && !nextProps.loading && !!nextProps.user) {
+    if (!nextProps.loading && nextProps.user &&
+      (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
+
+      if (this.messagesSubscription) {
+        this.messagesSubscription(); // unsubscribe from old
+      }
+
       this.messagesSubscription = nextProps.subscribeToMore({
         document: MESSAGE_ADDED_SUBSCRIPTION,
         variables: { groupIds: map(nextProps.user.groups, 'id') },

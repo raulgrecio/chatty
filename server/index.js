@@ -25,7 +25,7 @@ app.use('/graphql', bodyParser.json(), jwt({
 }), graphqlExpress(req => ({
   schema: executableSchema,
   context: {
-    user: req.user ? User.findOne({ where: { id: req.user.id } }) : null,
+    user: req.user ? User.findOne({ where: { id: req.user.id, version: req.user.version } }) : null,
   },
   debug: true, // false to not log errors
 })));
@@ -58,7 +58,7 @@ new SubscriptionServer({
             rej('Invalid Token');
           }
 
-          res(User.findOne({ where: { id: decoded.id } }));
+          res(User.findOne({ where: { id: decoded.id, version: decoded.version } }));
         });
       } else {
         res(null);
