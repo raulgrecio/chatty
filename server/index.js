@@ -2,7 +2,7 @@ import express from 'express';
 import { graphqlExpress, graphiqlExpress } from 'graphql-server-express';
 import bodyParser from 'body-parser';
 import { createServer } from 'http';
-import { SubscriptionServer } from 'subscriptions-transport-ws';
+import { SubscriptionServer } from 'subscriptions-transport-ws-authy';
 import jwt from 'express-jwt';
 import jsonwebtoken from 'jsonwebtoken';
 

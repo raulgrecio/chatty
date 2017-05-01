@@ -3175,9 +3175,9 @@ strip-json-comments@~2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
 
-"subscriptions-transport-ws@https://github.com/srtucker22/subscriptions-transport-ws.git":
+subscriptions-transport-ws-authy@^0.5.5:
   version "0.5.5"
-  resolved "https://github.com/srtucker22/subscriptions-transport-ws.git#0b15e82fd2db396996d63a34956cc571f9f46cfa"
+  resolved "https://registry.yarnpkg.com/subscriptions-transport-ws-authy/-/subscriptions-transport-ws-authy-0.5.5.tgz#4d81daa65d8000d72b005876a3a4582256992b47"
   dependencies:
     "@types/ws" "0.0.38"
     backo2 "^1.0.2"
