@@ -149,7 +149,7 @@ export const userLogic = {
       return user.getGroups();
     });
   },
-  jwt(user, args, ctx) {
+  jwt(user) {
     return Promise.resolve(user.jwt);
   },
   messages(user, args, ctx) {

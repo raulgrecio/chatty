@@ -20,6 +20,7 @@ import { connect } from 'react-redux';
 import SelectedUserList from './selected-user-list.component';
 import USER_QUERY from '../graphql/user.query';
 
+// eslint-disable-next-line
 const sortObject = o => Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
 
 const styles = StyleSheet.create({
@@ -74,37 +75,31 @@ const styles = StyleSheet.create({
   },
 });
 
-class SectionHeader extends Component {
-  render() {
-    // inline styles used for brevity, use a stylesheet when possible
-    const textStyle = {
-      textAlign: 'center',
-      color: '#fff',
-      fontWeight: '700',
-      fontSize: 16,
-    };
+const SectionHeader = ({ title }) => {
+  // inline styles used for brevity, use a stylesheet when possible
+  const textStyle = {
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  };
 
-    const viewStyle = {
-      backgroundColor: '#ccc',
-    };
-    return (
-      <View style={viewStyle}>
-        <Text style={textStyle}>{this.props.title}</Text>
-      </View>
-    );
-  }
-}
+  const viewStyle = {
+    backgroundColor: '#ccc',
+  };
+  return (
+    <View style={viewStyle}>
+      <Text style={textStyle}>{title}</Text>
+    </View>
+  );
+};
 SectionHeader.propTypes = {
   title: PropTypes.string,
 };
 
-class SectionItem extends Component {
-  render() {
-    return (
-      <Text style={{ color: 'blue' }}>{this.props.title}</Text>
-    );
-  }
-}
+const SectionItem = ({ title }) => (
+  <Text style={{ color: 'blue' }}>{title}</Text>
+);
 SectionItem.propTypes = {
   title: PropTypes.string,
 };
@@ -284,7 +279,7 @@ class NewGroup extends Component {
 }
 
 NewGroup.propTypes = {
-  auth: PropTypes.shape({
+  auth: PropTypes.shape({  // eslint-disable-line react/no-unused-prop-types
     id: PropTypes.number,
     jwt: PropTypes.string,
   }),

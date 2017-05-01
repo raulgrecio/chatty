@@ -177,7 +177,7 @@ class Groups extends Component {
   componentWillReceiveProps(nextProps) {
     if (!nextProps.auth.jwt && !nextProps.auth.loading) {
       Actions.signin();
-    } else if (!!nextProps.user && !!nextProps.user.groups &&
+    } else if (nextProps.user && nextProps.user.groups &&
       // check for new messages
       (!this.props.user || nextProps.user.groups !== this.props.user.groups)) {
       // convert groups Array to ListView.DataSource
@@ -195,35 +195,37 @@ class Groups extends Component {
         this.messagesSubscription(); // unsubscribe from old
       }
 
-      this.messagesSubscription = nextProps.subscribeToMore({
-        document: MESSAGE_ADDED_SUBSCRIPTION,
-        variables: { groupIds: map(nextProps.user.groups, 'id') },
-        updateQuery: (previousResult, { subscriptionData }) => {
-          const previousGroups = previousResult.user.groups;
-          const newMessage = subscriptionData.data.messageAdded;
+      if (nextProps.user.groups.length) {
+        this.messagesSubscription = nextProps.subscribeToMore({
+          document: MESSAGE_ADDED_SUBSCRIPTION,
+          variables: { groupIds: map(nextProps.user.groups, 'id') },
+          updateQuery: (previousResult, { subscriptionData }) => {
+            const previousGroups = previousResult.user.groups;
+            const newMessage = subscriptionData.data.messageAdded;
 
-          const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
+            const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
 
-          // if it's our own mutation, we might get the subscription result
-          // after the mutation result.
-          if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
-            return previousResult;
-          }
+            // if it's our own mutation, we might get the subscription result
+            // after the mutation result.
+            if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
+              return previousResult;
+            }
 
-          return update(previousResult, {
-            user: {
-              groups: {
-                [groupIndex]: {
-                  messages: { $set: [newMessage] },
+            return update(previousResult, {
+              user: {
+                groups: {
+                  [groupIndex]: {
+                    messages: { $set: [newMessage] },
+                  },
                 },
               },
-            },
-          });
-        },
-      });
+            });
+          },
+        });
+      }
     }
 
-    if (!this.groupSubscription && !nextProps.loading && !!nextProps.user) {
+    if (!this.groupSubscription && !nextProps.loading && nextProps.user) {
       this.groupSubscription = nextProps.subscribeToMore({
         document: GROUP_ADDED_SUBSCRIPTION,
         variables: { userId: nextProps.user.id }, // last time we'll fake the user!
@@ -319,7 +321,7 @@ Groups.propTypes = {
   }),
   loading: PropTypes.bool,
   refetch: PropTypes.func,
-  subscribeToMore: PropTypes.func,
+  subscribeToMore: PropTypes.func,  // eslint-disable-line react/no-unused-prop-types
   user: PropTypes.shape({
     id: PropTypes.number.isRequired,
     email: PropTypes.string.isRequired,

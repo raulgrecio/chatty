@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Router, Scene, Actions } from 'react-native-router-flux';
 import { Text, View, StyleSheet } from 'react-native';
@@ -32,25 +32,13 @@ const styles = StyleSheet.create({
   },
 });
 
-const TestScene = props => (
+const TabIcon = ({ title, selected }) => (
   <View style={styles.container}>
-    <Text>
-      {props.title}
+    <Text style={[styles.tabText, selected ? styles.selected : undefined]}>
+      {title}
     </Text>
   </View>
 );
-
-class TabIcon extends Component {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={[styles.tabText, this.props.selected ? styles.selected : undefined]}>
-          {this.props.title}
-        </Text>
-      </View>
-    );
-  }
-}
 TabIcon.propTypes = {
   selected: PropTypes.bool,
   title: PropTypes.string.isRequired,

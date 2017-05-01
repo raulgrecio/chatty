@@ -67,7 +67,7 @@ function capitalizeFirstLetter(string) {
   return string[0].toUpperCase() + string.slice(1);
 }
 
-export class Signin extends Component {
+class Signin extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -106,8 +106,8 @@ export class Signin extends Component {
           `${capitalizeFirstLetter(this.state.view)} error`,
           error.message,
           [
-            { text: 'OK', onPress: () => console.log('OK pressed') },
-            { text: 'Forgot password', onPress: () => console.log('Forgot Pressed'), style: 'cancel' },
+            { text: 'OK', onPress: () => console.log('OK pressed') }, // eslint-disable-line no-console
+            { text: 'Forgot password', onPress: () => console.log('Forgot Pressed'), style: 'cancel' }, // eslint-disable-line no-console
           ],
         );
       });
@@ -131,7 +131,7 @@ export class Signin extends Component {
         Alert.alert(
           `${capitalizeFirstLetter(this.state.view)} error`,
           error.message,
-          [{ text: 'OK', onPress: () => console.log('OK pressed') }],
+          [{ text: 'OK', onPress: () => console.log('OK pressed') }],  // eslint-disable-line no-console
         );
       });
   }

@@ -100,6 +100,7 @@ class Messages extends Component {
         // apply a color to each user
         newData.group.users.map((user) => {
           usernameColors[user.username] = this.state.usernameColors[user.username] || randomColor();
+          return usernameColors[user.username];
         });
       }
 

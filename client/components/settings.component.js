@@ -101,7 +101,9 @@ class Settings extends Component {
     this.props.dispatch(logout());
   }
 
+  // eslint-disable-next-line
   updateUsername(username) {
+    // eslint-disable-next-line
     console.log('TODO: update username');
   }
 

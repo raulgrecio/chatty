@@ -34,7 +34,8 @@ networkInterface.use([{
 networkInterface.useAfter([{
   applyAfterware({ response }, next) {
     if (!response.ok) {
-      response.clone().text().then(bodyText => {
+      response.clone().text().then((bodyText) => {
+         // eslint-disable-next-line no-console
         console.log(`Network Error: ${response.status} (${response.statusText}) - ${bodyText}`);
         next();
       });
@@ -45,7 +46,7 @@ networkInterface.useAfter([{
             if (e.message === 'Unauthorized') {
               return store.dispatch(logout());  // eslint-disable-line no-use-before-define
             }
-            return console.log('GraphQL Error:', e.message);
+            return console.log('GraphQL Error:', e.message); // eslint-disable-line no-console
           });
         }
         next();
@@ -101,7 +102,7 @@ persistStore(store, {
   blacklist: ['apollo'], // don't persist apollo
 });
 
-
+ // eslint-disable-next-line react/prefer-stateless-function
 export default class App extends Component {
   render() {
     return (

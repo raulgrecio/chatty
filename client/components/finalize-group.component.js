@@ -18,7 +18,7 @@ import { graphql, compose } from 'react-apollo';
 
 import USER_QUERY from '../graphql/user.query';
 import CREATE_GROUP_MUTATION from '../graphql/createGroup.mutation';
-import { SelectedUserList } from './selected-user-list.component';
+import SelectedUserList from './selected-user-list.component';
 
 const styles = StyleSheet.create({
   container: {
@@ -133,8 +133,7 @@ class FinalizeGroup extends Component {
     createGroup({
       name: this.state.name,
       userIds: _.map(this.state.selected, 'id'),
-    }).then((res) => {
-      const group = res.data.createGroup;
+    }).then(() => {
       // TODO: want to pop back to groups and then jump into messages
       Actions.tabs({ type: 'reset' });
     }).catch((error) => {
@@ -142,7 +141,7 @@ class FinalizeGroup extends Component {
         'Error Creating New Group',
         error.message,
         [
-          { text: 'OK', onPress: () => console.log('OK pressed') },
+          { text: 'OK', onPress: () => {} },
         ],
       );
     });
@@ -204,11 +203,6 @@ FinalizeGroup.propTypes = {
     id: PropTypes.number,
     username: PropTypes.string,
   })).isRequired,
-  user: PropTypes.shape({
-    id: PropTypes.number,
-    username: PropTypes.string,
-    groups: PropTypes.array,
-  }),
 };
 
 const createGroup = graphql(CREATE_GROUP_MUTATION, {

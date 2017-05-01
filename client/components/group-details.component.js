@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export class GroupDetails extends Component {
+class GroupDetails extends Component {
   constructor(props) {
     super(props);
 
@@ -106,21 +106,21 @@ export class GroupDetails extends Component {
 
   deleteGroup() {
     this.props.deleteGroup({ id: this.props.id })
-      .then((res) => {
+      .then(() => {
         Actions.tabs({ type: 'reset' });
       })
       .catch((e) => {
-        console.error(e);
+        console.log(e);   // eslint-disable-line no-console
       });
   }
 
   leaveGroup() {
     this.props.leaveGroup({ id: this.props.id })
-      .then((res) => {
+      .then(() => {
         Actions.tabs({ type: 'reset' });
       })
       .catch((e) => {
-        console.error(e);
+        console.log(e);   // eslint-disable-line no-console
       });
   }
 
@@ -195,6 +195,7 @@ GroupDetails.propTypes = {
   deleteGroup: PropTypes.func.isRequired,
   leaveGroup: PropTypes.func.isRequired,
   id: PropTypes.number.isRequired,
+  selected: PropTypes.arrayOf(PropTypes.any), // eslint-disable-line react/no-unused-prop-types
 };
 
 const groupQuery = graphql(GROUP_QUERY, {
