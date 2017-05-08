@@ -174,7 +174,7 @@ class Groups extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!nextProps.loading && nextProps.user !== this.props.user) {
+    if (!nextProps.loading && nextProps.user) {
       // convert groups Array to ListView.DataSource
       // we will use this.state.ds to populate our ListView
       this.setState({
@@ -184,56 +184,12 @@ class Groups extends Component {
     }
 
     // we don't resubscribe on changed props, because it never happens in our app
-    if (!this.messagesSubscription && !nextProps.loading) {
-      this.messagesSubscription = nextProps.subscribeToMore({
-        document: MESSAGE_ADDED_SUBSCRIPTION,
-        variables: { groupIds: map(nextProps.user.groups, 'id') },
-        updateQuery: (previousResult, { subscriptionData }) => {
-          const previousGroups = previousResult.user.groups;
-          const newMessage = subscriptionData.data.messageAdded;
-
-          const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
-
-          // if it's our own mutation, we might get the subscription result
-          // after the mutation result.
-          if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
-            return previousResult;
-          }
-
-          return update(previousResult, {
-            user: {
-              groups: {
-                [groupIndex]: {
-                  messages: { $set: [newMessage] },
-                },
-              },
-            },
-          });
-        },
-      });
+    if (!this.messagesSubscription && nextProps.user) {
+      this.messagesSubscription = nextProps.subscribeToMessages();
     }
 
-    if (!this.groupSubscription && !nextProps.loading) {
-      this.groupSubscription = nextProps.subscribeToMore({
-        document: GROUP_ADDED_SUBSCRIPTION,
-        variables: { userId: 1 }, // last time we'll fake the user!
-        updateQuery: (previousResult, { subscriptionData }) => {
-          const previousGroups = previousResult.user.groups;
-          const newGroup = subscriptionData.data.groupAdded;
-
-          // if it's our own mutation, we might get the subscription result
-          // after the mutation result.
-          if (isDuplicateDocument(newGroup, previousGroups)) {
-            return previousResult;
-          }
-
-          return update(previousResult, {
-            user: {
-              groups: { $push: [newGroup] },
-            },
-          });
-        },
-      });
+    if (!this.groupSubscription && nextProps.user) {
+      this.groupSubscription = nextProps.subscribeToGroups();
     }
   }
 
@@ -294,6 +250,8 @@ Groups.propTypes = {
   loading: PropTypes.bool,
   refetch: PropTypes.func,
   subscribeToMore: PropTypes.func,
+  subscribeToMessages: PropTypes.func,
+  subscribeToGroups: PropTypes.func,
   user: PropTypes.shape({
     id: PropTypes.number.isRequired,
     email: PropTypes.string.isRequired,
@@ -309,7 +267,59 @@ Groups.propTypes = {
 const userQuery = graphql(USER_QUERY, {
   options: () => ({ variables: { id: 1 } }),
   props: ({ data: { loading, refetch, user, subscribeToMore } }) => ({
-    loading, refetch, user, subscribeToMore,
+    loading,
+    refetch,
+    user,
+    subscribeToMessages() {
+      return subscribeToMore({
+        document: MESSAGE_ADDED_SUBSCRIPTION,
+        variables: { groupIds: map(user.groups, 'id') },
+        updateQuery: (previousResult, { subscriptionData }) => {
+          const previousGroups = previousResult.user.groups;
+          const newMessage = subscriptionData.data.messageAdded;
+
+          const groupIndex = map(previousGroups, 'id').indexOf(newMessage.to.id);
+
+          // if it's our own mutation, we might get the subscription result
+          // after the mutation result.
+          if (isDuplicateDocument(newMessage, previousGroups[groupIndex].messages)) {
+            return previousResult;
+          }
+
+          return update(previousResult, {
+            user: {
+              groups: {
+                [groupIndex]: {
+                  messages: { $set: [newMessage] },
+                },
+              },
+            },
+          });
+        },
+      });
+    },
+    subscribeToGroups() {
+      return subscribeToMore({
+        document: GROUP_ADDED_SUBSCRIPTION,
+        variables: { userId: user.id },
+        updateQuery: (previousResult, { subscriptionData }) => {
+          const previousGroups = previousResult.user.groups;
+          const newGroup = subscriptionData.data.groupAdded;
+
+          // if it's our own mutation, we might get the subscription result
+          // after the mutation result.
+          if (isDuplicateDocument(newGroup, previousGroups)) {
+            return previousResult;
+          }
+
+          return update(previousResult, {
+            user: {
+              groups: { $push: [newGroup] },
+            },
+          });
+        },
+      });
+    },
   }),
 });
 
