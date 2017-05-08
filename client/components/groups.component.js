@@ -183,7 +183,7 @@ class Groups extends Component {
       });
     }
 
-    if (!nextProps.loading && nextProps.user &&
+    if (nextProps.user &&
       (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
       if (this.messagesSubscription) {
         this.messagesSubscription(); // unsubscribe from old
@@ -194,7 +194,7 @@ class Groups extends Component {
       }
     }
 
-    if (!this.groupSubscription && !nextProps.loading && nextProps.user) {
+    if (!this.groupSubscription && nextProps.user) {
       this.groupSubscription = nextProps.subscribeToGroups();
     }
   }
