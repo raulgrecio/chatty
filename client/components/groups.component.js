@@ -183,12 +183,18 @@ class Groups extends Component {
       });
     }
 
-    // we don't resubscribe on changed props, because it never happens in our app
-    if (!this.messagesSubscription && nextProps.user) {
-      this.messagesSubscription = nextProps.subscribeToMessages();
+    if (!nextProps.loading && nextProps.user &&
+      (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
+      if (this.messagesSubscription) {
+        this.messagesSubscription(); // unsubscribe from old
+      }
+
+      if (nextProps.user.groups.length) {
+        this.messagesSubscription = nextProps.subscribeToMessages(); // subscribe to new
+      }
     }
 
-    if (!this.groupSubscription && nextProps.user) {
+    if (!this.groupSubscription && !nextProps.loading && nextProps.user) {
       this.groupSubscription = nextProps.subscribeToGroups();
     }
   }
