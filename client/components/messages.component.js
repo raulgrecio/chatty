@@ -81,6 +81,8 @@ class Messages extends Component {
     this.groupDetails = this.groupDetails.bind(this);
     this.onRefresh = this.onRefresh.bind(this);
     this.renderTitle = this.renderTitle.bind(this);
+    this.onLayout = this.onLayout.bind(this);
+    this.onContentSizeChange = this.onContentSizeChange.bind(this);
   }
 
   componentDidMount() {
@@ -153,6 +155,20 @@ class Messages extends Component {
     Actions.groupDetails({ id: this.props.groupId });
   }
 
+  onContentSizeChange(w, h) {
+    if (this.state.shouldScrollToBottom && this.state.height < h) {
+      this.listView.scrollToEnd({ animated: true });
+      this.setState({
+        shouldScrollToBottom: false,
+      });
+    }
+  }
+
+  onLayout(e) {
+    const { height } = e.nativeEvent.layout;
+    this.setState({ height });
+  }
+
   send(text) {
     this.props.createMessage({
       groupId: this.props.groupId,
@@ -214,14 +230,8 @@ class Messages extends Component {
               onRefresh={this.onRefresh}
             />
           }
-          onContentSizeChange={() => {
-            if (this.state.shouldScrollToBottom) {
-              this.listView.scrollToEnd({ animated: true });
-              this.setState({
-                shouldScrollToBottom: false,
-              });
-            }
-          }}
+          onContentSizeChange={this.onContentSizeChange}
+          onLayout={this.onLayout}
           renderRow={message => (
             <Message
               color={this.state.usernameColors[message.from.username]}
