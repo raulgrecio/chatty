@@ -66,6 +66,7 @@ class MessageInput extends Component {
   send() {
     this.props.send(this.state.text);
     this.textInput.clear();
+    this.textInput.blur();
   }
 
   render() {
