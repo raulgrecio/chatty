@@ -64,6 +64,8 @@ class Messages extends Component {
     };
 
     this.send = this.send.bind(this);
+    this.onLayout = this.onLayout.bind(this);
+    this.onContentSizeChange = this.onContentSizeChange.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -92,6 +94,20 @@ class Messages extends Component {
         });
       }
     }
+  }
+
+  onContentSizeChange(w, h) {
+    if (this.state.shouldScrollToBottom && this.state.height < h) {
+      this.listView.scrollToEnd({ animated: true });
+      this.setState({
+        shouldScrollToBottom: false,
+      });
+    }
+  }
+
+  onLayout(e) {
+    const { height } = e.nativeEvent.layout;
+    this.setState({ height });
   }
 
   send(text) {
@@ -130,14 +146,8 @@ class Messages extends Component {
           style={styles.listView}
           enableEmptySections
           dataSource={this.state.ds}
-          onContentSizeChange={() => {
-            if (this.state.shouldScrollToBottom) {
-              this.listView.scrollToEnd({ animated: true });
-              this.setState({
-                shouldScrollToBottom: false,
-              });
-            }
-          }}
+          onContentSizeChange={this.onContentSizeChange}
+          onLayout={this.onLayout}
           renderRow={message => (
             <Message
               color={this.state.usernameColors[message.from.username]}
