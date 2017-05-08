@@ -1,3 +1,4 @@
+import { client } from '../components/app.component';
 import { SET_CURRENT_USER, LOGOUT } from '../constants/constants';
 
 export const setCurrentUser = user => ({
@@ -5,6 +6,7 @@ export const setCurrentUser = user => ({
   user,
 });
 
-export const logout = () => ({
-  type: LOGOUT,
-});
+export const logout = () => {
+  client.resetStore();
+  return { type: LOGOUT };
+};

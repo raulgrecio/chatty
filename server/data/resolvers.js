@@ -23,7 +23,7 @@ export const Resolvers = {
     createMessage(_, args, ctx) {
       return messageLogic.createMessage(_, args, ctx)
         .then((message) => {
-          // Publish subscription notification with the whole message
+          // Publish subscription notification with message
           pubsub.publish('messageAdded', message);
           return message;
         });
@@ -82,9 +82,10 @@ export const Resolvers = {
             email,
             password: hash,
             username: username || email,
+            version: 1,
           })).then((user) => {
             const { id } = user;
-            const token = jwt.sign({ id, email }, JWT_SECRET);
+            const token = jwt.sign({ id, email, version: 1 }, JWT_SECRET);
             return { jwt: token, id };
           });
         }

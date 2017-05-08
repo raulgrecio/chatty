@@ -108,10 +108,10 @@ class Settings extends Component {
   }
 
   render() {
-    const { auth, user, loading } = this.props;
+    const { user } = this.props;
 
     // render loading placeholder while we fetch data
-    if (!user || auth.loading || loading) {
+    if (!user) {
       return (
         <View style={[styles.loading, styles.container]}>
           <ActivityIndicator />

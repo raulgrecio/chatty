@@ -183,7 +183,7 @@ export const subscriptionLogic = {
           return Promise.reject('Unauthorized');
         }
 
-        baseParams.context = user;
+        baseParams.context = ctx;
         return baseParams;
       });
   },
@@ -196,7 +196,7 @@ export const subscriptionLogic = {
           return Promise.reject('Unauthorized');
         }
 
-        baseParams.context = user;
+        baseParams.context = ctx;
         return baseParams;
       }));
   },
