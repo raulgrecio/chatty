@@ -1,1 +1,0 @@
-* update subscribeToMore variables -- e.g. groupAdded should trigger additional groupId in messageAdded
