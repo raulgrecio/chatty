@@ -48,7 +48,7 @@ export const Resolvers = {
       return groupLogic.updateGroup(_, args, ctx);
     },
 
-    login(_, { email, password }) {
+    login(_, { email, password }, ctx) {
       // find user by email
       return User.findOne({ where: { email } }).then((user) => {
         if (user) {
@@ -62,7 +62,8 @@ export const Resolvers = {
                 version: user.version,
               }, JWT_SECRET);
               user.jwt = token;
-              return { jwt: token, id: user.id };
+              ctx.user = Promise.resolve(user);
+              return user;
             }
 
             return Promise.reject('password incorrect');
@@ -73,7 +74,7 @@ export const Resolvers = {
       });
     },
 
-    signup(_, { email, password, username }) {
+    signup(_, { email, password, username }, ctx) {
       // find user by email
       return User.findOne({ where: { email } }).then((existing) => {
         if (!existing) {
@@ -86,7 +87,9 @@ export const Resolvers = {
           })).then((user) => {
             const { id } = user;
             const token = jwt.sign({ id, email, version: 1 }, JWT_SECRET);
-            return { jwt: token, id };
+            user.jwt = token;
+            ctx.user = Promise.resolve(user);
+            return user;
           });
         }
 
