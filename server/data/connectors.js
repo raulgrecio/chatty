@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 const db = new Sequelize('chatty', null, null, {
   dialect: 'sqlite',
   storage: './chatty.sqlite',
-  logging: false,
+  // logging: false,
 });
 
 const GroupModel = db.define('group', {

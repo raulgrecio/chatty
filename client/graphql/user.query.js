@@ -1,28 +1,15 @@
 import gql from 'graphql-tag';
 
-import MESSAGE_FRAGMENT from './message.fragment';
+import USER_FRAGMENT from './user.fragment';
 
 // get the user and all user's groups
 const USER_QUERY = gql`
-  query user($id: Int) {
+  query user($id: Int, $withGroups: Boolean = false, $withFriends: Boolean = false) {
     user(id: $id) {
-      id
-      email
-      username
-      friends {
-        id
-        username
-      }
-      groups {
-        id
-        name
-        messages(limit: 1) {
-          ... MessageFragment
-        }
-      }
+      ... UserFragment
     }
   }
-  ${MESSAGE_FRAGMENT}
+  ${USER_FRAGMENT}
 `;
 
 export default USER_QUERY;

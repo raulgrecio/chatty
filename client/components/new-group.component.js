@@ -295,7 +295,7 @@ NewGroup.propTypes = {
 };
 
 const userQuery = graphql(USER_QUERY, {
-  options: ({ auth }) => ({ variables: { id: auth.id } }),
+  options: ({ auth }) => ({ variables: { id: auth.id, withFriends: true } }),
   props: ({ data: { loading, user } }) => ({
     loading, user,
   }),

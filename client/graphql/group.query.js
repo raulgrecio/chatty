@@ -2,7 +2,7 @@ import gql from 'graphql-tag';
 import MESSAGE_FRAGMENT from './message.fragment';
 
 const GROUP_QUERY = gql`
-  query group($groupId: Int!, $limit: Int, $offset: Int) {
+  query group($groupId: Int!, $limit: Int, $offset: Int = 0) {
     group(id: $groupId) {
       id
       name

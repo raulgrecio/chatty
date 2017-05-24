@@ -283,7 +283,7 @@ Groups.propTypes = {
 
 const userQuery = graphql(USER_QUERY, {
   skip: ownProps => !ownProps.auth || !ownProps.auth.jwt,
-  options: ownProps => ({ variables: { id: ownProps.auth.id } }),
+  options: ownProps => ({ variables: { id: ownProps.auth.id, withGroups: true } }),
   props: ({ data: { loading, refetch, user, subscribeToMore } }) => ({
     loading,
     refetch,

@@ -233,7 +233,7 @@ const createGroup = graphql(CREATE_GROUP_MUTATION, {
 });
 
 const userQuery = graphql(USER_QUERY, {
-  options: ({ userId }) => ({ variables: { id: userId } }),
+  options: ({ userId }) => ({ variables: { id: userId, withGroups: true } }),
   props: ({ data: { loading, user } }) => ({
     loading, user,
   }),
