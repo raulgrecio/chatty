@@ -68,6 +68,11 @@ function capitalizeFirstLetter(string) {
 }
 
 class Signin extends Component {
+  static navigationOptions = {
+    title: 'Chatty',
+    headerLeft: null,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -81,7 +86,7 @@ class Signin extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.auth.jwt) {
-      Actions.pop();
+      nextProps.navigation.goBack();
     }
   }
 

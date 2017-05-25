@@ -3,27 +3,35 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
   Alert,
+  Button,
   Image,
   ListView,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Actions } from 'react-native-router-flux';
 import update from 'immutability-helper';
 import { graphql, compose } from 'react-apollo';
+import { NavigationActions } from 'react-navigation';
 
 import USER_QUERY from '../graphql/user.query';
 import CREATE_GROUP_MUTATION from '../graphql/createGroup.mutation';
 import SelectedUserList from './selected-user-list.component';
 
+const goToNewGroup = group => NavigationActions.reset({
+  index: 1,
+  actions: [
+    NavigationActions.navigate({ routeName: 'Main' }),
+    NavigationActions.navigate({ routeName: 'Messages', params: { groupId: group.id, title: group.name } }),
+  ],
+});
+
 const styles = StyleSheet.create({
   container: {
-    marginTop: Platform.OS === 'ios' ? 64 : 54, // nav bar height
     flex: 1,
+    backgroundColor: 'white',
   },
   detailsContainer: {
     padding: 20,
@@ -86,14 +94,30 @@ function isDuplicateGroup(newGroup, existingGroups) {
 }
 
 class FinalizeGroup extends Component {
+  static navigationOptions = ({ navigation }) => {
+    const { state, setParams } = navigation;
+    const isReady = state.params && state.params.mode === 'ready';
+    return {
+      title: 'New Group',
+      headerRight: (
+        isReady ? <Button
+          title="Create"
+          onPress={state.params.create}
+        /> : undefined
+      ),
+    };
+  };
+
   constructor(props) {
     super(props);
 
+    const { selected } = props.navigation.state.params;
+
     this.state = {
-      selected: props.selected,
+      selected,
       ds: new ListView.DataSource({
         rowHasChanged: (r1, r2) => r1 !== r2,
-      }).cloneWithRows(props.selected),
+      }).cloneWithRows(selected),
     };
 
     this.create = this.create.bind(this);
@@ -113,7 +137,7 @@ class FinalizeGroup extends Component {
   }
 
   pop() {
-    Actions.pop({ refresh: { selected: this.state.selected } });
+    this.props.navigation.goBack();
   }
 
   remove(user) {
@@ -133,9 +157,8 @@ class FinalizeGroup extends Component {
     createGroup({
       name: this.state.name,
       userIds: _.map(this.state.selected, 'id'),
-    }).then(() => {
-      // TODO: want to pop back to groups and then jump into messages
-      Actions.tabs({ type: 'reset' });
+    }).then((res) => {
+      this.props.navigation.dispatch(goToNewGroup(res.data.createGroup));
     }).catch((error) => {
       Alert.alert(
         'Error Creating New Group',
@@ -147,16 +170,17 @@ class FinalizeGroup extends Component {
     });
   }
 
-  refreshNavigation(enabled) {
-    Actions.refresh({
-      onBack: this.pop,
-      backTitle: 'Back',
-      rightTitle: enabled ? 'Create' : undefined,
-      onRight: enabled ? this.create : undefined,
+  refreshNavigation(ready) {
+    const { navigation } = this.props;
+    navigation.setParams({
+      mode: ready ? 'ready' : undefined,
+      create: this.create,
     });
   }
 
   render() {
+    const { friendCount } = this.props.navigation.state.params;
+
     return (
       <View style={styles.container}>
         <View style={styles.detailsContainer}>
@@ -182,7 +206,7 @@ class FinalizeGroup extends Component {
           </View>
         </View>
         <Text style={styles.participants}>
-          {`participants: ${this.state.selected.length} of ${this.props.friendCount}`.toUpperCase()}
+          {`participants: ${this.state.selected.length} of ${friendCount}`.toUpperCase()}
         </Text>
         <View style={styles.selected}>
           {this.state.selected.length ?
@@ -198,11 +222,11 @@ class FinalizeGroup extends Component {
 
 FinalizeGroup.propTypes = {
   createGroup: PropTypes.func.isRequired,
-  friendCount: PropTypes.number.isRequired,
-  selected: PropTypes.arrayOf(React.PropTypes.shape({
-    id: PropTypes.number,
-    username: PropTypes.string,
-  })).isRequired,
+  // friendCount: PropTypes.number.isRequired,
+  // selected: PropTypes.arrayOf(React.PropTypes.shape({
+  //   id: PropTypes.number,
+  //   username: PropTypes.string,
+  // })).isRequired,
 };
 
 const createGroup = graphql(CREATE_GROUP_MUTATION, {
@@ -233,7 +257,11 @@ const createGroup = graphql(CREATE_GROUP_MUTATION, {
 });
 
 const userQuery = graphql(USER_QUERY, {
-  options: ({ userId }) => ({ variables: { id: userId, withGroups: true } }),
+  options: ownProps => ({
+    variables: {
+      id: ownProps.navigation.state.params.userId, withGroups: true,
+    },
+  }),
   props: ({ data: { loading, user } }) => ({
     loading, user,
   }),

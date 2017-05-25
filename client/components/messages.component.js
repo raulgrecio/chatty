@@ -37,23 +37,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#e5ddd5',
     flex: 1,
     flexDirection: 'column',
-    paddingTop: 32,
   },
   loading: {
     justifyContent: 'center',
   },
   titleWrapper: {
     alignItems: 'center',
-    marginTop: 10,
     position: 'absolute',
-    ...Platform.select({
-      ios: {
-        top: 15,
-      },
-      android: {
-        top: 5,
-      },
-    }),
     left: 0,
     right: 0,
   },
@@ -70,6 +60,33 @@ const styles = StyleSheet.create({
 });
 
 class Messages extends Component {
+  static navigationOptions = ({ navigation }) => {
+    const { state, setParams } = navigation;
+    const { navigate } = navigation;
+
+    const goToGroupDetails = navigation.navigate.bind(this, 'GroupDetails', {
+      id: state.params.groupId,
+      title: state.params.title,
+    });
+
+    return {
+      headerTitle: (
+        <TouchableOpacity
+          style={styles.titleWrapper}
+          onPress={goToGroupDetails}
+        >
+          <View style={styles.title}>
+            <Image
+              style={styles.titleImage}
+              source={{ uri: 'https://facebook.github.io/react/img/logo_og.png' }}
+            />
+            <Text>{state.params.title}</Text>
+          </View>
+        </TouchableOpacity>
+      ),
+    };
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -79,15 +96,9 @@ class Messages extends Component {
     };
 
     this.send = this.send.bind(this);
-    this.groupDetails = this.groupDetails.bind(this);
     this.onRefresh = this.onRefresh.bind(this);
-    this.renderTitle = this.renderTitle.bind(this);
     this.onContentSizeChange = this.onContentSizeChange.bind(this);
     this.onLayout = this.onLayout.bind(this);
-  }
-
-  componentDidMount() {
-    this.renderTitle();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -122,7 +133,7 @@ class Messages extends Component {
     if (!this.subscription && !newData.loading) {
       this.subscription = newData.subscribeToMore({
         document: MESSAGE_ADDED_SUBSCRIPTION,
-        variables: { groupIds: [newData.groupId] },
+        variables: { groupIds: [newData.navigation.state.params.groupId] },
         updateQuery: (previousResult, { subscriptionData }) => {
           const newMessage = subscriptionData.data.messageAdded;
 
@@ -167,38 +178,15 @@ class Messages extends Component {
     this.setState({ height });
   }
 
-  groupDetails() {
-    Actions.groupDetails({ id: this.props.groupId });
-  }
-
   send(text) {
     this.props.createMessage({
-      groupId: this.props.groupId,
+      groupId: this.props.navigation.state.params.groupId,
       userId: this.props.auth.id,
       text,
     });
 
     this.setState({
       shouldScrollToBottom: true,
-    });
-  }
-
-  renderTitle() {
-    Actions.refresh({
-      renderTitle: () => (
-        <TouchableOpacity
-          style={styles.titleWrapper}
-          onPress={this.groupDetails}
-        >
-          <View style={styles.title}>
-            <Image
-              style={styles.titleImage}
-              source={{ uri: 'https://facebook.github.io/react/img/logo_og.png' }}
-            />
-            <Text>{this.props.title}</Text>
-          </View>
-        </TouchableOpacity>
-      ),
     });
   }
 
@@ -260,15 +248,15 @@ Messages.propTypes = {
   }),
   loading: PropTypes.bool,
   loadMoreEntries: PropTypes.func,
-  groupId: PropTypes.number.isRequired,
-  title: PropTypes.string.isRequired,
+  // groupId: PropTypes.number.isRequired,
+  // title: PropTypes.string.isRequired,
 };
 
 const ITEMS_PER_PAGE = 10;
 const groupQuery = graphql(GROUP_QUERY, {
-  options: ({ groupId }) => ({
+  options: ownProps => ({
     variables: {
-      groupId,
+      groupId: ownProps.navigation.state.params.groupId,
       offset: 0,
       limit: ITEMS_PER_PAGE,
     },

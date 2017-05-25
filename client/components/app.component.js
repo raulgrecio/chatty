@@ -8,7 +8,7 @@ import { persistStore, autoRehydrate } from 'redux-persist';
 import thunk from 'redux-thunk';
 import { AsyncStorage } from 'react-native';
 
-import { Routes, Scenes } from './routes.component';
+import AppWithNavigationState, { navigationReducer } from './routes.component';
 import auth from '../reducers/auth.reducer';
 import { logout } from '../actions/auth.actions';
 
@@ -88,6 +88,7 @@ const store = createStore(
   combineReducers({
     apollo: client.reducer(),
     auth,
+    nav: navigationReducer,
   }),
   {}, // initial state
   composeWithDevTools(
@@ -107,7 +108,7 @@ export default class App extends Component {
   render() {
     return (
       <ApolloProvider store={store} client={client}>
-        <Routes scenes={Scenes} />
+        <AppWithNavigationState />
       </ApolloProvider>
     );
   }

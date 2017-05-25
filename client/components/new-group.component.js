@@ -3,14 +3,13 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
   ActivityIndicator,
+  Button,
   Image,
   ListView,
-  Platform,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Actions } from 'react-native-router-flux';
 import { graphql, compose } from 'react-apollo';
 import AlphabetListView from 'react-native-alphabetlistview';
 import update from 'immutability-helper';
@@ -25,8 +24,8 @@ const sortObject = o => Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r),
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: Platform.OS === 'ios' ? 64 : 54, // nav bar height
     flex: 1,
+    backgroundColor: 'white',
   },
   cellContainer: {
     alignItems: 'center',
@@ -156,11 +155,30 @@ Cell.propTypes = {
 };
 
 class NewGroup extends Component {
+  static navigationOptions = ({ navigation }) => {
+    const { state, setParams } = navigation;
+    const isReady = state.params && state.params.mode === 'ready';
+    return {
+      title: 'New Group',
+      headerRight: (
+        isReady ? <Button
+          title="Next"
+          onPress={state.params.finalizeGroup}
+        /> : undefined
+      ),
+    };
+  };
+
   constructor(props) {
     super(props);
 
-    this.state = {
-      selected: props.selected || [],
+    let selected = [];
+    if (this.props.navigation.state.params) {
+      selected = this.props.navigation.state.params.selected;
+    }
+
+    this.state = { 
+      selected: selected || [],
       friends: props.user ?
         _.groupBy(props.user.friends, friend => friend.username.charAt(0).toUpperCase()) : [],
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 }),
@@ -176,6 +194,7 @@ class NewGroup extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    console.log('nextProps', nextProps)
     const state = {};
     if (nextProps.user && nextProps.user.friends && nextProps.user !== this.props.user) {
       state.friends = sortObject(
@@ -199,18 +218,19 @@ class NewGroup extends Component {
     }
   }
 
+  // TODO: replace
   refreshNavigation(selected) {
-    Actions.refresh({
-      onLeft: Actions.pop,
-      leftTitle: 'Back',
-      rightTitle: selected && selected.length ? 'Next' : undefined,
-      onRight: selected && selected.length ? this.finalizeGroup : undefined,
-      selected,
+    const { navigation } = this.props;
+    navigation.setParams({
+      mode: selected && selected.length ? 'ready' : undefined,
+      finalizeGroup: this.finalizeGroup,
     });
   }
 
   finalizeGroup() {
-    Actions.finalizeGroup({
+    console.log('finalizeGroup', this.props, this.state);
+    const { navigate } = this.props.navigation;
+    navigate('FinalizeGroup', {
       selected: this.state.selected,
       friendCount: this.props.user.friends.length,
       userId: this.props.user.id,

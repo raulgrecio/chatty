@@ -6,7 +6,6 @@ import {
   Button,
   Image,
   ListView,
-  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -33,9 +32,8 @@ function isDuplicateDocument(newDocument, existingDocuments) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 50, // tab bar height
-    marginTop: Platform.OS === 'ios' ? 64 : 54, // nav bar height
     flex: 1,
+    backgroundColor: 'white',
   },
   loading: {
     justifyContent: 'center',
@@ -92,11 +90,14 @@ const styles = StyleSheet.create({
   },
 });
 
-const Header = () => (
+const Header = ({ onPress }) => (
   <View style={styles.header}>
-    <Button title={'New Group'} onPress={Actions.newGroup} />
+    <Button title={'New Group'} onPress={onPress} />
   </View>
 );
+Header.propTypes = {
+  onPress: PropTypes.func.isRequired,
+};
 
 // format createdAt with moment
 const formatCreatedAt = createdAt => moment(createdAt).calendar(null, {
@@ -163,6 +164,10 @@ Group.propTypes = {
 };
 
 class Groups extends Component {
+  static navigationOptions = {
+    title: 'Chats',
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -171,42 +176,65 @@ class Groups extends Component {
     };
 
     this.goToMessages = this.goToMessages.bind(this);
+    this.goToNewGroup = this.goToNewGroup.bind(this);
     this.onRefresh = this.onRefresh.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
     if (!nextProps.auth.jwt && !nextProps.auth.loading) {
-      Actions.signin();
-    } else if (nextProps.user && nextProps.user.groups &&
-      // check for new messages
-      (!this.props.user || nextProps.user.groups !== this.props.user.groups)) {
-      // convert groups Array to ListView.DataSource
-      // we will use this.state.ds to populate our ListView
-      this.setState({
-        // cloneWithRows computes a diff and decides whether to rerender
-        ds: this.state.ds.cloneWithRows(nextProps.user.groups),
-      });
-    }
-
-    if (nextProps.user &&
-      (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
-      if (this.messagesSubscription) {
-        this.messagesSubscription(); // unsubscribe from old
+      console.log(this.messageSubscription, this.groupSubscription);
+      if (this.messageSubscription) {
+        this.messageSubscription();
+        this.messageSubscription = null;
       }
 
-      if (nextProps.user.groups.length) {
-        this.messagesSubscription = nextProps.subscribeToMessages(); // subscribe to new
+      if (this.groupSubscription) {
+        this.groupSubscription();
+        this.groupSubscription = null;
       }
-    }
 
-    if (!this.groupSubscription && nextProps.user) {
-      this.groupSubscription = nextProps.subscribeToGroups();
+      const { navigate } = this.props.navigation;
+      navigate('Signin');
+    } else {
+      if (nextProps.user &&
+        (!this.props.user || nextProps.user.groups.length !== this.props.user.groups.length)) {
+        if (this.messageSubscription) {
+          this.messageSubscription(); // unsubscribe from old
+          this.messageSubscription = null;
+        }
+
+        if (nextProps.user.groups.length) {
+          this.messageSubscription = nextProps.subscribeToMessages(); // subscribe to new
+          console.log('subscribe');
+        }
+      }
+
+      if (!this.groupSubscription && nextProps.user) {
+        this.groupSubscription = nextProps.subscribeToGroups();
+      }
+
+      if (nextProps.user && nextProps.user.groups &&
+        // check for new messages
+        (!this.props.user || nextProps.user.groups !== this.props.user.groups)) {
+        // convert groups Array to ListView.DataSource
+        // we will use this.state.ds to populate our ListView
+        this.setState({
+          // cloneWithRows computes a diff and decides whether to rerender
+          ds: this.state.ds.cloneWithRows(nextProps.user.groups),
+        });
+      }
     }
   }
 
   // eslint-disable-next-line
   goToMessages(group) {
-    Actions.messages({ groupId: group.id, title: group.name });
+    const { navigate } = this.props.navigation;
+    navigate('Messages', { groupId: group.id, title: group.name });
+  }
+
+  goToNewGroup() {
+    const { navigate } = this.props.navigation;
+    navigate('NewGroup');
   }
 
   onRefresh() {
@@ -231,7 +259,7 @@ class Groups extends Component {
     if (user && !user.groups.length) {
       return (
         <View style={styles.container}>
-          <Header />
+          <Header onPress={this.goToNewGroup} />
           <Text style={styles.warning}>{'You do not have any groups.'}</Text>
         </View>
       );
@@ -249,7 +277,7 @@ class Groups extends Component {
               onRefresh={this.onRefresh}
             />
           }
-          renderHeader={() => <Header />}
+          renderHeader={() => <Header onPress={this.goToNewGroup} />}
           renderRow={(group => (
             <Group group={group} goToMessages={this.goToMessages} />
           ))}

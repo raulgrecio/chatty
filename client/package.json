@@ -21,6 +21,7 @@
 		"react-native-alphabetlistview": "^0.2.0",
 		"react-native-router-flux": "3.38.0",
 		"react-native-vector-icons": "^4.0.1",
+		"react-navigation": "^1.0.0-beta.11",
 		"react-redux": "^5.0.2",
 		"redux": "^3.6.0",
 		"redux-devtools-extension": "^2.13.0",
@@ -32,6 +33,7 @@
 	"devDependencies": {
 		"babel-jest": "^19.0.0",
 		"babel-preset-react-native": "1.9.1",
+		"babel-preset-stage-2": "^6.24.1",
 		"jest": "^19.0.2",
 		"react-test-renderer": "^15.5.4"
 	},

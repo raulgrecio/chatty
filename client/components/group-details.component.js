@@ -15,14 +15,21 @@ import {
 import { Actions } from 'react-native-router-flux';
 import { graphql, compose } from 'react-apollo';
 import update from 'immutability-helper';
+import { NavigationActions } from 'react-navigation';
 
 import GROUP_QUERY from '../graphql/group.query';
 import DELETE_GROUP_MUTATION from '../graphql/deleteGroup.mutation';
 import LEAVE_GROUP_MUTATION from '../graphql/leaveGroup.mutation';
 
+const resetAction = NavigationActions.reset({
+  index: 0,
+  actions: [
+    NavigationActions.navigate({ routeName: 'Main' }),
+  ],
+});
+
 const styles = StyleSheet.create({
   container: {
-    marginTop: Platform.OS === 'ios' ? 64 : 54, // nav bar height
     flex: 1,
   },
   avatar: {
@@ -83,8 +90,14 @@ const styles = StyleSheet.create({
 });
 
 class GroupDetails extends Component {
+  static navigationOptions = ({ navigation }) => ({
+    title: `${navigation.state.params.title}`,
+  });
+
   constructor(props) {
     super(props);
+
+    console.log(props);
 
     this.state = {
       ds: new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 })
@@ -98,16 +111,15 @@ class GroupDetails extends Component {
   componentWillReceiveProps(nextProps) {
     if (nextProps.group && nextProps.group.users && nextProps.group !== this.props.group) {
       this.setState({
-        selected: nextProps.selected,
         ds: this.state.ds.cloneWithRows(nextProps.group.users),
       });
     }
   }
 
   deleteGroup() {
-    this.props.deleteGroup({ id: this.props.id })
+    this.props.deleteGroup(this.props.navigation.state.params.id)
       .then(() => {
-        Actions.tabs({ type: 'reset' });
+        this.props.navigation.dispatch(resetAction);
       })
       .catch((e) => {
         console.log(e);   // eslint-disable-line no-console
@@ -115,9 +127,9 @@ class GroupDetails extends Component {
   }
 
   leaveGroup() {
-    this.props.leaveGroup({ id: this.props.id })
+    this.props.leaveGroup(this.props.navigation.state.params.id)
       .then(() => {
-        Actions.tabs({ type: 'reset' });
+        this.props.navigation.dispatch(resetAction);
       })
       .catch((e) => {
         console.log(e);   // eslint-disable-line no-console
@@ -194,12 +206,10 @@ GroupDetails.propTypes = {
   }),
   deleteGroup: PropTypes.func.isRequired,
   leaveGroup: PropTypes.func.isRequired,
-  id: PropTypes.number.isRequired,
-  selected: PropTypes.arrayOf(PropTypes.any), // eslint-disable-line react/no-unused-prop-types
 };
 
 const groupQuery = graphql(GROUP_QUERY, {
-  options: ({ id }) => ({ variables: { groupId: id } }),
+  options: ownProps => ({ variables: { groupId: ownProps.navigation.state.params.id } }),
   props: ({ data: { loading, group } }) => ({
     loading,
     group,
@@ -208,12 +218,16 @@ const groupQuery = graphql(GROUP_QUERY, {
 
 const deleteGroup = graphql(DELETE_GROUP_MUTATION, {
   props: ({ ownProps, mutate }) => ({
-    deleteGroup: () =>
+    deleteGroup: id =>
       mutate({
-        variables: { id: ownProps.id },
+        variables: { id },
         updateQueries: {
           user: (previousResult, { mutationResult }) => {
             const removedGroup = mutationResult.data.deleteGroup;
+
+            if (!previousResult.user.groups) {
+              return;
+            }
 
             return update(previousResult, {
               user: {
@@ -231,12 +245,16 @@ const deleteGroup = graphql(DELETE_GROUP_MUTATION, {
 
 const leaveGroup = graphql(LEAVE_GROUP_MUTATION, {
   props: ({ ownProps, mutate }) => ({
-    leaveGroup: () =>
+    leaveGroup: id =>
       mutate({
-        variables: { id: ownProps.id },
+        variables: { id },
         updateQueries: {
           user: (previousResult, { mutationResult }) => {
             const removedGroup = mutationResult.data.leaveGroup;
+
+            if (!previousResult.user.groups) {
+              return;
+            }
 
             return update(previousResult, {
               user: {
