@@ -2,6 +2,6 @@ import {
   AppRegistry,
 } from 'react-native';
 
-import App from './components/app.component';
+import App from './src/components/app.component';
 
 AppRegistry.registerComponent('chatty', () => App);
