@@ -12,7 +12,10 @@ import { Routes, Scenes } from './routes.component';
 import auth from '../reducers/auth.reducer';
 import { logout } from '../actions/auth.actions';
 
-import { GRAPHQL_SERVER, GRAPHQL_PORT, GRAPHQL_PATH, SUBSCRIPTIONS_PATH } from '../constants/config';
+import { GRAPHQL_SERVER, GRAPHQL_PORT } from '../constants/config';
+
+const GRAPHQL_PATH = '/graphql';
+const SUBSCRIPTIONS_PATH = '/subscriptions';
 
 const networkInterface = createNetworkInterface({ uri: `http://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${GRAPHQL_PATH}` });
 

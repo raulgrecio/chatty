@@ -6,13 +6,14 @@ import { SubscriptionServer } from 'subscriptions-transport-ws-authy';
 import jwt from 'express-jwt';
 import jsonwebtoken from 'jsonwebtoken';
 
-import { JWT_SECRET } from './config';
+import { JWT_SECRET, GRAPHQL_SERVER, GRAPHQL_PORT } from './config';
 import { subscriptionManager, getSubscriptionDetails } from './subscriptions';
 import executableSchema from './data/schema';
 import { User } from './data/connectors';
 import { subscriptionLogic } from './data/logic';
 
-import { GRAPHQL_SERVER, GRAPHQL_PORT, GRAPHQL_PATH, SUBSCRIPTIONS_PATH } from './config';
+const GRAPHQL_PATH = '/graphql';
+const SUBSCRIPTIONS_PATH = '/subscriptions';
 
 const app = express();
 
