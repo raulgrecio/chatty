@@ -12,9 +12,7 @@ import executableSchema from './data/schema';
 import { User } from './data/connectors';
 import { subscriptionLogic } from './data/logic';
 
-const GRAPHQL_PORT = 8080;
-const GRAPHQL_PATH = '/graphql';
-const SUBSCRIPTIONS_PATH = '/subscriptions';
+import { GRAPHQL_SERVER, GRAPHQL_PORT, GRAPHQL_PATH, SUBSCRIPTIONS_PATH } from './config';
 
 const app = express();
 
@@ -32,14 +30,14 @@ app.use('/graphql', bodyParser.json(), jwt({
 
 app.use('/graphiql', graphiqlExpress({
   endpointURL: '/graphql',
-  subscriptionsEndpoint: `ws://localhost:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`,
+  subscriptionsEndpoint: `ws://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`,
 }));
 
 const graphQLServer = createServer(app);
 
 graphQLServer.listen(GRAPHQL_PORT, () => {
-  console.log(`GraphQL Server is now running on http://localhost:${GRAPHQL_PORT}${GRAPHQL_PATH}`); // eslint-disable-line no-console
-  console.log(`GraphQL Subscriptions are now running on ws://localhost:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`); // eslint-disable-line no-console
+  console.log(`GraphQL Server is now running on http://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${GRAPHQL_PATH}`); // eslint-disable-line no-console
+  console.log(`GraphQL Subscriptions are now running on ws://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`); // eslint-disable-line no-console
 });
 
 // eslint-disable-next-line no-new

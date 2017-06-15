@@ -12,7 +12,9 @@ import { Routes, Scenes } from './routes.component';
 import auth from '../reducers/auth.reducer';
 import { logout } from '../actions/auth.actions';
 
-const networkInterface = createNetworkInterface({ uri: 'http://localhost:8080/graphql' });
+import { GRAPHQL_SERVER, GRAPHQL_PORT, GRAPHQL_PATH, SUBSCRIPTIONS_PATH } from '../constants/config';
+
+const networkInterface = createNetworkInterface({ uri: `http://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${GRAPHQL_PATH}` });
 
 // middleware for requests
 networkInterface.use([{
@@ -56,7 +58,7 @@ networkInterface.useAfter([{
 }]);
 
 // Create WebSocket client
-const wsClient = new SubscriptionClient('ws://localhost:8080/subscriptions', {
+const wsClient = new SubscriptionClient(`ws://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${SUBSCRIPTIONS_PATH}`, {
   reconnect: true,
   connectionParams: {
     // Pass any arguments you want for initialization
