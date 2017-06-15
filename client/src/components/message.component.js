@@ -13,12 +13,14 @@ const TAIL_WIDTH = 8;
 const TAIL_HEIGHT = 12;
 
 const messageShadow = {
+  /*
   shadowColor: 'rgba(0, 0, 0, .36)',
   shadowOpacity: 0.5,
   shadowRadius: 1,
   shadowOffset: {
     height: 1,
   },
+  */
 };
 
 const styles = StyleSheet.create({
@@ -43,11 +45,9 @@ const styles = StyleSheet.create({
   },
   messageIn: {
     backgroundColor: 'white',
-    //alignSelf: 'flex-end'
   },
   messageOut: {
     backgroundColor: MESSAGE_OUT_BACKGROUND_COLOR,
-    //alignSelf: 'flex-start'
   },
   messageSpacer: {
     marginTop: 12,
