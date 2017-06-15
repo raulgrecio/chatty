@@ -2,3 +2,4 @@ node_modules
 .vscode
 chatty.sqlite
 yarn-error.log
+.idea
