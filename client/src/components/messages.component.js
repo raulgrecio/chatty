@@ -108,13 +108,22 @@ class Messages extends Component {
 
       if (!!newData.group.messages &&
         (!oldData.group || newData.group.messages !== oldData.group.messages)) {
-        // convert messages Array to ListView.DataSource
-        // we will use this.state.ds to populate our ListView
-        this.setState({
-          // cloneWithRows computes a diff and decides whether to rerender
-          ds: this.state.ds.cloneWithRows(newData.group.messages.slice().reverse()),
-          usernameColors,
-        });
+
+          //We add dynamically the change of user not to repeat it if it continues spelling
+          let lastUserId;
+          const newMessages = newData.group.messages.slice().reverse().map(function(message){
+            const isChangeUser = (lastUserId) ? (message.from.id !== lastUserId) : true;
+            lastUserId = message.from.id;
+            return update(message, {$merge: {isChangeUser: isChangeUser}});
+          });
+
+          // convert messages Array to ListView.DataSource
+          // we will use this.state.ds to populate our ListView
+          this.setState({
+            // cloneWithRows computes a diff and decides whether to rerender
+            ds: this.state.ds.cloneWithRows(newMessages), //this.state.ds.cloneWithRows(newData.group.messages.slice().reverse()),
+            usernameColors,
+          });
       }
     }
 
@@ -235,12 +244,14 @@ class Messages extends Component {
           onContentSizeChange={this.onContentSizeChange}
           onLayout={this.onLayout}
           renderRow={message => (
-            <Message
-              color={this.state.usernameColors[message.from.username]}
-              message={message}
-              isCurrentUser={message.from.id === auth.id}
-            />
-          )}
+              <Message
+                color={this.state.usernameColors[message.from.username]}
+                message={message}
+                isCurrentUser={message.from.id === auth.id}
+                isChangeUser={message.isChangeUser}
+              />
+            )
+          }
         />
         <MessageInput send={this.send} />
       </KeyboardAvoidingView>
