@@ -6,16 +6,21 @@ import ApolloClient, { createNetworkInterface } from 'apollo-client';
 import { SubscriptionClient, addGraphQLSubscriptions } from 'subscriptions-transport-ws-authy';
 import { persistStore, autoRehydrate } from 'redux-persist';
 import thunk from 'redux-thunk';
-import { AsyncStorage } from 'react-native';
+import {
+  AsyncStorage,
+  Platform,
+} from 'react-native';
 
 import { Routes, Scenes } from './routes.component';
 import auth from '../reducers/auth.reducer';
 import { logout } from '../actions/auth.actions';
 
-import { GRAPHQL_SERVER, GRAPHQL_PORT } from '../constants/config';
+import { GRAPHQL_SERVER_ANDROID, GRAPHQL_SERVER_IOS, GRAPHQL_PORT } from '../constants/config';
 
+const GRAPHQL_SERVER = (Platform.OS === 'ios') ? GRAPHQL_SERVER_IOS : GRAPHQL_SERVER_ANDROID;
 const GRAPHQL_PATH = '/graphql';
 const SUBSCRIPTIONS_PATH = '/subscriptions';
+
 
 const networkInterface = createNetworkInterface({ uri: `http://${GRAPHQL_SERVER}:${GRAPHQL_PORT}${GRAPHQL_PATH}` });
 
